@@ -81,7 +81,7 @@ jobs:
 
         echo "Deploying to Namespace: $TARGET_NS"
         echo "Using Domain: $DOMAIN"
-        echo "Using Static IP Name: test-k8s-static-ip-$TARGET_NS"
+        echo "Using Static IP Name: test-k8s-app-static-ip-$TARGET_NS"
 
         # 3. 確保 Namespace 存在
         kubectl create namespace $TARGET_NS --dry-run=client -o yaml | kubectl apply -f -
@@ -95,7 +95,10 @@ jobs:
         
         # 6. 替換 Ingress 裡的網域佔位符
         sed -i "s|DOMAIN_NAME_PLACEHOLDER|$DOMAIN|g" k8s/ingress.yaml
+
+        # 7. 【新增】處理 HPA 的 Namespace 議題
+        sed -i "/namespace:/d" k8s/hpa.yaml
     
-        # 7. 部署所有資源到指定的 Namespace
+        # 8. 部署所有資源到指定的 Namespace
         kubectl apply -f k8s/ -n $TARGET_NS
         

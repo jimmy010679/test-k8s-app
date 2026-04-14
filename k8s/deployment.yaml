@@ -20,3 +20,16 @@ spec:
         image: asia-east1-docker.pkg.dev/test-k8s-app-492717/test-k8s-app-repo/my-app:v1
         ports:
         - containerPort: 3000 # 你的程式監聽的 Port
+        resources:
+          requests:
+            cpu: "1"         # 啟動時預留 1 核心
+            memory: "1Gi"    # 啟動時預留 1GB 內存
+          limits:
+            cpu: "1"         # 最高限制 1 核心
+            memory: "1Gi"    # 最高限制 1GB 內存 (避免 OOM)
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 20
