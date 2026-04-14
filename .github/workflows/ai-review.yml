@@ -1,0 +1,51 @@
+name: Gemini AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # 必須有寫入權限才能貼 comment
+      checks: write       # 允許寫入測試檢查結
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'yarn'
+
+      - name: Install Dependencies
+        run: yarn add @google/generative-ai
+
+      - name: Get PR Diff
+        id: diff
+        run: |
+          # 獲取 PR 的改動內容，排除非代碼或鎖定檔
+          git diff origin/${{ github.base_ref }}...HEAD -- . ':(exclude)yarn.lock' ':(exclude)*.md' > pr_diff.txt
+
+      - name: Run Gemini Review
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_CODE_REVIEWER_MODEL: ${{ vars.GEMINI_CODE_REVIEWER_MODEL }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/gemini-reviewer.js pr_diff.txt
+
+      - name: Upload Review Result (Optional)
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ai-review-log
+          path: pr_diff.txt

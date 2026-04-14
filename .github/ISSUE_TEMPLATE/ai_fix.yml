@@ -1,0 +1,34 @@
+name: "🤖 AI 自動修復請求"
+description: "使用 Gemini 自動修復 Bug"
+title: "fix: "
+labels: ["fix-me"]
+body:
+  - type: dropdown
+    id: target_env
+    attributes:
+      label: "🎯 目標修復環境 (Target Environment)"
+      description: "請選擇 AI 應該在哪個分支進行修復"
+      options:
+        - dev
+        - uat
+        - main
+    validations:
+      required: true
+  - type: textarea
+    id: bug_desc
+    attributes:
+      label: "Bug 現象描述"
+      placeholder: "目前首頁時間顯示為 2026/04/02，應改為 2026/04/12"
+    validations:
+      required: true
+  - type: input
+    id: path
+    attributes:
+      label: "涉及檔案路徑"
+      placeholder: "例如：src/app/page.tsx"
+  - type: textarea
+    id: expected
+    attributes:
+      label: "預期的正確結果"
+      placeholder: "例如：將 2026/04/02 改為 2026/04/12，並確保文字顏色為紅色"
+      render: "markdown" # 這樣你甚至可以在裡面貼代碼塊

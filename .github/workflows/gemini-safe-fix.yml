@@ -1,0 +1,122 @@
+name: Gemini Safe Bug Fixer
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  safe_fix:
+    if: github.event.label.name == 'fix-me'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15 # 第一道保險：超過 15 分鐘強制關閉，防止 Runner 燒錢
+
+    permissions:
+      contents: write   # 允許推送代碼 (Branch)
+      pull-requests: write # 允許建立 PR
+      issues: read      # 允許讀取 Issue 內容
+
+    steps:
+      - name: Parse Target Branch from Issue Body
+        id: parse_branch
+        run: |
+          # 1. 使用 HEREDOC 將 Body 安全地寫入臨時文件，避免 Shell 解析錯誤
+          cat << 'EOF' > issue_body.txt
+          ${{ github.event.issue.body }}
+          EOF
+
+          # 2. 從文件中解析目標分支
+          # grep -A 2 確保跳過空行，grep -v 排除標題與空行，xargs 清除前後空白
+          TARGET_BRANCH=$(grep -A 2 "目標修復環境" issue_body.txt | grep -v "目標修復環境" | grep -v "^$" | head -n 1 | xargs)
+
+          # 3. 安全檢查：若抓不到則預設 main
+          if [ -z "$TARGET_BRANCH" ]; then
+            TARGET_BRANCH="main"
+          fi
+
+          echo "解析到的目標分支為: $TARGET_BRANCH"
+          echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
+
+      - name: Checkout Code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TARGET_BRANCH }} # 使用解析出的變數切換到對應分支
+
+      - name: Setup Node.js 
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+
+      - name: Enable Corepack & Install Dependencies
+        run: |
+          corepack enable
+          yarn install --immutable # CI 環境建議加上 --immutable 確保 yarn.lock 沒被意外變動
+
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli
+
+      - name: Gemini Auto-Fix with Budget Control
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_AUTO_FIX_MODEL: '${{ vars.GEMINI_AUTO_FIX_MODEL }}'
+          MAX_RETRIES: 3 # 最多重試 3 次，控制 API 成本
+        run: |
+          attempt=1
+          success=false
+
+          while [ $attempt -le $MAX_RETRIES ]; do
+            echo "正在進行第 $attempt 次嘗試..."
+            
+            # 1. 呼叫 Gemini：加入嚴格禁令
+            # 增加指令要求僅限修改 src/，且嚴禁修改腳本語法
+            gemini -p "這是一個 Next.js 專案。
+            請針對 ${{ env.TARGET_BRANCH }} 分支修復 Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}。
+            修改完後必須確保 yarn lint 與 yarn build 都能通過。
+
+            【任務目標】：
+            1. 根據 Issue 描述的預期結果進行代碼修改。
+            2. **修改後必須確保符合專案規範，使 yarn lint 與 yarn build 都能順利通過。**
+
+            【嚴格限制】：
+            1. 僅限修改 src/ 目錄下的檔案。
+            2. 絕對禁止修改 .github/ 或 scripts/ 目錄下的任何內容。" --model "$GEMINI_AUTO_FIX_MODEL" --yolo || true
+
+            # 2. 【核心保險】：不可改變的目錄
+            git checkout ${{ env.TARGET_BRANCH }} -- .github/ scripts/
+            echo "不可改變的目錄，防止 AI 竄改相關配置。"
+            
+            # 3. 驗證
+            if yarn lint && yarn build; then
+              echo "修復成功且編譯通過！"
+              success=true
+              break
+            else
+              echo "驗證失敗，準備重試..."
+            fi
+            
+            attempt=$((attempt + 1))
+          done
+
+          if [ "$success" = true ]; then
+            echo "SUCCESS=true" >> $GITHUB_ENV
+          else
+            echo "修復失敗，已達重試上限。請手動檢查 Issue 或 Log。"
+            exit 1
+          fi
+
+      - name: Create Pull Request
+        if: env.SUCCESS == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ env.TARGET_BRANCH }} # 將 PR 的目標指向解析出來的分支
+          commit-message: "fix(ai): automatic fix for issue #${{ github.event.issue.number }}"
+          title: "AI 修復建議 (${{ env.TARGET_BRANCH }}): ${{ github.event.issue.title }}"
+          body: |
+            ## AI 自動修復報告
+            - **關聯問題**: #${{ github.event.issue.number }}
+            - **目標分支**: `${{ env.TARGET_BRANCH }}`
+            - **驗證方式**: `yarn lint` & `yarn build` 已通過 ✅
+            - **底層模型**: ${{ env.GEMINI_AUTO_FIX_MODEL }}
+            
+            請檢查 Files Changed，確認邏輯無誤後即可合併。
+          branch: gemini-fix-${{ github.event.issue.number }}-${{ env.TARGET_BRANCH }}
+          delete-branch: true
