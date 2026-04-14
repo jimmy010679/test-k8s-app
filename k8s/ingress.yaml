@@ -3,16 +3,17 @@ kind: Ingress
 metadata:
   name:  test-k8s-app-ingress
   annotations:
-    # 告訴 GKE 使用 Google Cloud 的外部負載平衡器
-    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.class: "gce" # 告訴 GKE 使用 Google Cloud 的外部負載平衡器
+    kubernetes.io/static-ip-name: "STATIC_IP_NAME" # 這裡會被 deploy.yml 替換成 test-k8s-static-ip-prod/uat/dev
 spec:
   rules:
-  - http:
+  - host: DOMAIN_NAME_PLACEHOLDER  # 這裡會被 deploy.yml 替換成正確的網域
+    http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: test-k8s-app-service # 指向剛剛寫的 Service
+            name: test-k8s-app-service
             port:
               number: 80

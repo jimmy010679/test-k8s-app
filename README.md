@@ -1,6 +1,6 @@
 # 結合 Gemini API 自動化PR審查 與 GKE 自動化部署
 
-![PROD deployment](https://github.com/jimmy010679/test-k8s-app/actions/workflows/production.yaml/badge.svg)
+![PROD deployment](https://github.com/jimmy010679/test-k8s-app/actions/workflows/deploy.yaml/badge.svg)
 ![Gemini - AI Code Review](https://github.com/jimmy010679/test-k8s-app/actions/workflows/ai-review.yml/badge.svg)
 ![Gemini - Issues Auto Fix](https://github.com/jimmy010679/test-k8s-app/actions/workflows/gemini-safe-fix.yml/badge.svg)
 
