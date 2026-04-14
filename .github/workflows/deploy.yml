@@ -34,6 +34,7 @@ jobs:
         token_format: 'access_token'
         workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
         service_account: '${{ vars.GCP_SERVICE_ACCOUNT }}'
+        create_credentials_file: true # 1. 產生憑證檔案，這是執行 override 的前提條件
 
     # 2. 登入 Artifact Registry (讓 Docker 具備推送到 GCP 的權限)
     - name: Docker Auth
@@ -57,6 +58,8 @@ jobs:
       with:
         cluster_name: '${{ env.CLUSTER_NAME }}'
         location: '${{ env.CLUSTER_LOCATION }}'
+        project_id: '${{ vars.GCP_PROJECT_ID }}' # 2. 強制指定目標專案
+        use_user_project_override: true  # 3. 使用剛才產生的憑證檔案，這會覆蓋預設的 API 檢查行為
 
     # 5. 部署到 GKE
     # 這裡會先用 sed 把 k8s/deployment.yaml 裡的 Image 標籤換成這次產生的 ${{ github.sha }}
