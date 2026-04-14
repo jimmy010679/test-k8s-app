@@ -65,7 +65,6 @@ jobs:
         cluster_name: '${{ vars.GKE_CLUSTER_NAME }}'
         location: '${{ env.CLUSTER_LOCATION }}'
         project_id: '${{ vars.GCP_PROJECT_ID }}' # 2. 強制指定目標專案
-        use_user_project_override: true  # 3. 使用剛才產生的憑證檔案，這會覆蓋預設的 API 檢查行為
 
     # 5. 部署到 GKE
     - name: Deploy to GKE
@@ -91,8 +90,8 @@ jobs:
         IMAGE_PATH="${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }}"
         sed -i "s|image: .*|image: $IMAGE_PATH|g" k8s/deployment.yaml
 
-        # 5. 替換 Ingress 裡的靜態 IP 名稱
-        sed -i "s|STATIC_IP_NAME|test-k8s-static-ip-$TARGET_NS|g" k8s/ingress.yaml
+        # 5. 替換 Ingress 裡的靜態 IP 名稱 (加上 -app 以匹配 Terraform)
+        sed -i "s|STATIC_IP_NAME|test-k8s-app-static-ip-$TARGET_NS|g" k8s/ingress.yaml
         
         # 6. 替換 Ingress 裡的網域佔位符
         sed -i "s|DOMAIN_NAME_PLACEHOLDER|$DOMAIN|g" k8s/ingress.yaml
