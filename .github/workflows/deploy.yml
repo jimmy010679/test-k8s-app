@@ -111,11 +111,12 @@ jobs:
         # 8. 替換 HPA 的 Namespace 議題
         sed -i "/namespace:/d" k8s/hpa.yaml
     
-        # 9. 先部署基礎組件 (Deployment, Service, HPA, Certificate)
+        # 9. 先部署基礎組件 (Deployment, Service, HPA, Certificate, frontend-config)
         kubectl apply -f k8s/deployment.yaml \
                       -f k8s/service.yaml \
                       -f k8s/hpa.yaml \
                       -f k8s/certificate.yaml \
+                      -f k8s/frontend-config.yaml \
                       -n $TARGET_NS
 
         # 10. 精準等待：直到 Deployment 的 Pod 全部進入 Ready 狀態
