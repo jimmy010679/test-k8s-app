@@ -5,4 +5,3 @@ metadata:
 spec:
   redirectToHttps:
     enabled: true
-    responseCode: MOVED_PERMANENTLY_DEFAULT # 回傳 301 永久導向
