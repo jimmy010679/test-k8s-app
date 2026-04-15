@@ -38,10 +38,10 @@ jobs:
       uses: 'google-github-actions/auth@v3'
       with:
         token_format: 'access_token'
+        project_id: '${{ vars.GCP_PROJECT_ID }}'  # 部署目標專案 (不要讓它預設為 SA 所在的 Admin 專案)
         workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
         service_account: '${{ vars.GCP_SERVICE_ACCOUNT }}'
-        project_id: 'test-k8s-app-492717'  # 部署目標專案 (不要讓它預設為 SA 所在的 Admin 專案)
-        create_credentials_file: true # 1. 產生憑證檔案，這是執行 override 的前提條件
+        create_credentials_file: true # 產生憑證檔案，這是執行 override 的前提條件
 
     # 2. 登入 Artifact Registry (讓 Docker 具備推送到 GCP 的權限)
     - name: Docker Auth
@@ -71,9 +71,9 @@ jobs:
     - name: Set up GKE credentials
       uses: 'google-github-actions/get-gke-credentials@v2'
       with:
+        project_id: '${{ vars.GCP_PROJECT_ID }}' # 指定目標專案
         cluster_name: '${{ vars.GKE_CLUSTER_NAME }}'
         location: '${{ env.CLUSTER_LOCATION }}'
-        project_id: '${{ vars.GCP_PROJECT_ID }}' # 2. 強制指定目標專案
 
     # 5. 部署到 GKE
     - name: Deploy to GKE
