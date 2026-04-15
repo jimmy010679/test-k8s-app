@@ -122,4 +122,5 @@ docker run -d -p 3000:3000 --name test-k8s-app-container test-k8s-app
 │   └── frontend-config.yaml # HTTP 轉 HTTPS 重定向配置
 ├── terraform/           # 雲端基礎設施代碼
 └── src/                 # Next.js 應用程式原始碼
+```
 
