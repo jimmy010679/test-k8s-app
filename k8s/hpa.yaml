@@ -1,13 +1,13 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: test-k8s-app-hpa
+  name: test-k8s-app-RESOURCE_SUFFIX-hpa
   # namespace: TARGET_NAMESPACE  <-- 建議交給 kubectl 處理或用 sed 替換
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: test-k8s-app-deployment # 必須對應到你的 Deployment 名稱
+    name: test-k8s-app-RESOURCE_SUFFIX-deployment # 必須對應到你的 Deployment 名稱
   minReplicas: 2   # 最小 Pod 數量 (確保高可用，壞了一個還有一個)
   maxReplicas: 10  # 最大 Pod 數量 (防止預算噴發)
   metrics:

@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-k8s-app-deployment
+  name: test-k8s-app-RESOURCE_SUFFIX-deployment
   labels:
-    app: test-k8s-app
+    app: test-k8s-app-RESOURCE_SUFFIX
 spec:
   replicas: 2 # 跑兩個副本，達成高可用性
   selector:
     matchLabels:
-      app: test-k8s-app
+      app: test-k8s-app-RESOURCE_SUFFIX
   template:
     metadata:
       labels:
-        app: test-k8s-app
+        app: test-k8s-app-RESOURCE_SUFFIX
     spec:
       containers:
       - name: test-k8s-app-container
