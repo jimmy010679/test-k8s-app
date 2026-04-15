@@ -105,28 +105,35 @@ jobs:
         # 6. 替換 Ingress 裡的網域佔位符
         sed -i "s|DOMAIN_NAME_PLACEHOLDER|$DOMAIN|g" k8s/ingress.yaml
 
-        # 7. 替換 HPA 的 Namespace 議題
+        # 7 替換 Certificate 替換憑證裡的網域
+        sed -i "s|DOMAIN_NAME_PLACEHOLDER|$DOMAIN|g" k8s/certificate.yaml
+
+        # 8. 替換 HPA 的 Namespace 議題
         sed -i "/namespace:/d" k8s/hpa.yaml
     
-        # 8. 先部署基礎組件 (Deployment, Service, HPA)
-        kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml -f k8s/hpa.yaml -n $TARGET_NS
+        # 9. 先部署基礎組件 (Deployment, Service, HPA, Certificate)
+        kubectl apply -f k8s/deployment.yaml \
+                      -f k8s/service.yaml \
+                      -f k8s/hpa.yaml \
+                      -f k8s/certificate.yaml \
+                      -n $TARGET_NS
 
-        # 9. 精準等待：直到 Deployment 的 Pod 全部進入 Ready 狀態
+        # 10. 精準等待：直到 Deployment 的 Pod 全部進入 Ready 狀態
         kubectl wait --for=condition=available --timeout=300s deployment/test-k8s-app-deployment -n $TARGET_NS
 
-        # 10. 給 GCP API 多 10 秒的緩衝
+        # 11. 給 GCP API 多 10 秒的緩衝
         sleep 10
 
-        # 11. 再部署 Ingress
+        # 12. 再部署 Ingress
         kubectl apply -f k8s/ingress.yaml -n $TARGET_NS
 
-        # 12. 等待 GKE 分配 IP 給 Ingress，這能確保靜態 IP 真的被認領成功了
+        # 13. 等待 GKE 分配 IP 給 Ingress，這能確保靜態 IP 真的被認領成功了
         echo "正在等待 GKE 分配靜態 IP..."
         kubectl wait --namespace $TARGET_NS \
           --for=jsonpath='{.status.loadBalancer.ingress[0].ip}' \
           --timeout=300s ingress/test-k8s-app-ingress
 
-        # 13. 成功後印出 IP 確認
+        # 14. 成功後印出 IP 確認
         FINAL_IP=$(kubectl get ingress test-k8s-app-ingress -n $TARGET_NS -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
         echo "部署完成！Ingress IP 為: $FINAL_IP"
         

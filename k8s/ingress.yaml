@@ -5,6 +5,9 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "gce" # 告訴 GKE 使用 Google Cloud 的外部負載平衡器
     kubernetes.io/ingress.global-static-ip-name: "STATIC_IP_NAME" # 這裡會被 deploy.yml 替換成 test-k8s-static-ip-prod/uat/dev
+    networking.gke.io/v1beta1.FrontendConfig: "ssl-redirect-config" # 連結 frontend-config
+    networking.gke.io/managed-certificates: "test-k8s-app-cert" # 連結 certificate
+    kubernetes.io/ingress.allow-http: "true" # 必須設為 true，ssl導向才會生效
 spec:
   ingressClassName: gce
   rules:
