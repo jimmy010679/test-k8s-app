@@ -1,6 +1,6 @@
 # 結合 Gemini API 自動化PR審查 與 GKE 自動化部署
 
-![PROD deployment](https://github.com/jimmy010679/test-k8s-app/actions/workflows/deploy.yaml/badge.svg)
+![PROD deployment](https://github.com/jimmy010679/test-k8s-app/actions/workflows/deploy.yml/badge.svg?branch=main)
 ![Gemini - AI Code Review](https://github.com/jimmy010679/test-k8s-app/actions/workflows/ai-review.yml/badge.svg)
 ![Gemini - Issues Auto Fix](https://github.com/jimmy010679/test-k8s-app/actions/workflows/gemini-safe-fix.yml/badge.svg)
 
@@ -8,8 +8,8 @@
 
 ## 🚀 正式環境網址
 
-您可以造訪以下網址查看最新部署版本：
-
+您可以造訪以下網址查看最新部署版本：(省錢會關閉)
+**[https://test-k8s-app.kyjhome.com/](https://test-k8s-app.kyjhome.com/)**
 
 ---
 
@@ -41,16 +41,24 @@
 
 本專案的雲端基礎架構採用 **Terraform** 進行管理，相關配置於另一個 **[gcp-infra-core](https://github.com/jimmy010679/gcp-infra-core)** 專案中。這種方式確保了環境的可複製性與安全性。
 
-### 資源與變數對照表
-若需重新配置或部署，請參考以下對應關係：
+### Environment variables 資源與變數對照表
+請在 Environment variables 的 production/uat/development 新增下面三個變數：
 
 | 類型 | GitHub 變數名稱 | Terraform 資源 / 屬性 | 說明 |
 | :--- | :--- | :--- | :--- |
 | **Variables** | `GCP_PROJECT_ID` | `var.ai_code_review_project_id` | GCP 專案 ID |
+| **Variables** | `GCP_SERVICE_ACCOUNT` | `tf-github-test-k8s-app@...` | 用於部署的專屬 Service Account Email |
+| **Variables** | `GKE_CLUSTER_NAME` | `test-k8s-app-cluster.` | Kubernetes 叢集 |
+
+
+### Repository variables 資源與變數對照表
+若需重新配置或部署，請參考以下對應關係：
+
+| 類型 | GitHub 變數名稱 | Terraform 資源 / 屬性 | 說明 |
+| :--- | :--- | :--- | :--- |
 | **Variables** | `GCP_REGION` | `var.region` | 部署區域 (預設: `asia-east1`) |
 | **Variables** | `GAR_REPO_NAME` | `test-k8s-app-repo` | Artifact Registry 儲存庫 ID |
 | **Variables** | `GCP_WIF_PROVIDER` | `google_iam_workload_identity_pool_provider` | WIF Provider 的完整名稱 |
-| **Variables** | `GCP_SERVICE_ACCOUNT` | `tf-github-test-k8s-app@...` | 用於部署的專屬 Service Account Email |
 
 ---
 
@@ -62,6 +70,12 @@
    - PR 開啟或更新時，觸發 `ai-review.yml` 進行程式碼差異分析與建議。
 3. **Production Deployment**: 
    - 合併至 `main` 後，觸發 WIF 認證並推送 Image 至 GKE。
+
+- **多環境佈署策略**: 
+  - `main` 分支 -> `production` 環境 (Namespace: `prod`)
+  - `uat` 分支 -> `uat` 環境 (Namespace: `uat`)
+  - `dev` 分支 -> `development` 環境 (Namespace: `dev`)
+- **精準部署邏輯**: 透過腳本自動替換網域、IP 名稱與映像檔標籤，確保環境完全隔離。
 
 ---
 
@@ -97,10 +111,15 @@ docker run -d -p 3000:3000 --name test-k8s-app-container test-k8s-app
 
 ## 專案結構
 
-- `src/`: 存放應用程式原始碼。
-- `scripts/gemini-reviewer.js`: AI Code Review 的核心執行腳本。
-- `.github/workflows/`:
-  - `production.yaml`: 正式環境自動化部署流程。
-  - `ai-review.yml`: PR 自動化 AI 審查流程。
-- `Dockerfile`: Next.js Standalone 多階段建置設定。
-- `next.config.ts`: 已開啟 `output: "standalone"` 以優化 Docker 映像檔。
+```text
+.
+├── .github/workflows/   # CI/CD 流程定義 (部署、AI 審查、自動修復)
+├── k8s/                 # Kubernetes 資源定義
+│   ├── deployment.yaml  # 應用程式容器定義
+│   ├── service.yaml     # 內部服務負載平衡
+│   ├── ingress.yaml     # 外部流量入口與 SSL 配置
+│   ├── certificate.yaml # Google 託管憑證定義
+│   └── frontend-config.yaml # HTTP 轉 HTTPS 重定向配置
+├── terraform/           # 雲端基礎設施代碼
+└── src/                 # Next.js 應用程式原始碼
+
