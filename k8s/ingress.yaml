@@ -4,7 +4,7 @@ metadata:
   name:  test-k8s-app-ingress
   annotations:
     kubernetes.io/ingress.class: "gce" # 告訴 GKE 使用 Google Cloud 的外部負載平衡器
-    kubernetes.io/static-ip-name: "STATIC_IP_NAME" # 這裡會被 deploy.yml 替換成 test-k8s-static-ip-prod/uat/dev
+    kubernetes.io/ingress.global-static-ip-name: "STATIC_IP_NAME" # 這裡會被 deploy.yml 替換成 test-k8s-static-ip-prod/uat/dev
 spec:
   ingressClassName: gce
   rules:
