@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <div className={styles.page}>
       <h1>基於 IaC 與無密鑰架構的跨專案雲端自動化部署</h1>
-      <p>2026/04/15 (test)</p>
+      <p>2026/04/22</p>
       <p>AI Code Review: 整合 Gemini API，每當開發者開啟 PR 或更新內容時，系統會自動進行代碼審查。</p>
       <p>AI Issue 自動修復: 透過 GitHub Issues 觸發，實現 AI 發 PR。</p>
       <p>自動化流程: 構建完整 CI/CD Pipeline，實現程式碼推送後會自動觸發構建。</p>

@@ -1,0 +1,22 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deploy-role # 角色名稱
+rules:
+- apiGroups: ["", "apps", "networking.k8s.io", "autoscaling", "networking.gke.io"]
+  resources: ["deployments", "services", "ingresses", "managedcertificates", "horizontalpodautoscalers", "pods", "frontendconfigs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deploy-role-binding
+subjects:
+- kind: ServiceAccount
+  name: ci-cd-sa
+  namespace: RESOURCE_SUFFIX # 這裡一樣用你的 placeholder
+roleRef:
+  kind: Role
+  name: deploy-role
+  apiGroup: rbac.authorization.k8s.io
