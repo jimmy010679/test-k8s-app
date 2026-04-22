@@ -27,9 +27,15 @@ spec:
           limits:
             cpu: "1"         # 最高限制 1 核心
             memory: "1Gi"    # 最高限制 1GB 內存 (避免 OOM)
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
         livenessProbe:
           httpGet:
-            path: /
+            path: /healthz
             port: 3000
           initialDelaySeconds: 15
           periodSeconds: 20
