@@ -46,8 +46,9 @@
 
 | 類型           | GitHub 變數名稱        | Terraform 資源 / 屬性             | 說明 |
 | :---          | :---                  | :---                            | :--- |
-| **Secrets**   | `DB_PASSWORD`         | `var.ai_code_review_project_id` | GCP 專案 ID |
-| **Variables** | `GCP_PROJECT_ID`      | `var.ai_code_review_project_id` | GCP 專案 ID |
+| **Secrets**   | `DB_PASSWORD`         | `var.ai_code_review_project_id` | DB 密碼 |
+| **Variables** | `GCP_APP_NAME`        | `test-k8s-app`                  | GCP 專案名稱 |
+| **Variables** | `GCP_PROJECT_ID`      | `test-k8s-app-xxxx`             | GCP 專案 ID |
 | **Variables** | `GCP_SERVICE_ACCOUNT` | `tf-github-test-k8s-app@...`    | 用於部署的專屬 Service Account Email |
 | **Variables** | `GKE_CLUSTER_NAME`    | `test-k8s-app-cluster`          | Kubernetes 叢集 |
 | **Variables** | `DB_INSTANCE_NAME`    | `xxxxxx-prod-db`                | DB名稱 |

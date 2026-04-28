@@ -87,7 +87,7 @@ jobs:
         SECRET_NAME="${APP_NAME}-${TARGET_ENV}-db-password"
 
         echo "準備寫入 Secret: $SECRET_NAME"
-        
+
         echo -n "${{ secrets.DB_PASSWORD }}" | gcloud secrets versions add "${SECRET_NAME}" --data-file=-
 
     # 6. 部署到 GKE
@@ -123,17 +123,21 @@ jobs:
         # 7. 替換 HPA 的 Namespace 議題
         sed -i "/namespace:/d" k8s/hpa.yaml
 
-        # 8. 替換 secret-provider 的 GCP_PROJECT_ID + DB_INSTANCE_NAME
+        # 8. 替換 secret-provider 的 GCP_PROJECT_ID + GCP_APP_NAME
         sed -i "s|YOUR_PROJECT_ID|${{ vars.GCP_PROJECT_ID }}|g" k8s/secret-provider.yaml
-        sed -i "s|YOUR_DB_INSTANCE_NAME|${{ vars.DB_INSTANCE_NAME }}|g" k8s/secret-provider.yaml
+        sed -i "s|YOUR_GCP_APP_NAME|${{ vars.GCP_APP_NAME }}|g" k8s/secret-provider.yaml
 
         # 9. 替換 k8s/*.yaml 下所有的 RESOURCE_SUFFIX 換成 環境名
         sed -i "s|RESOURCE_SUFFIX|$TARGET_NS|g" k8s/*.yaml
 
-        # 10. 部署 secret-provider.yaml，確保 secret-provider.yaml 是在 deployment.yaml 前面
+        # 10. 檢查 SecretProviderClass CRD 是否就緒
+        echo "檢查 SecretProviderClass CRD 是否就緒..."
+        kubectl wait --for=condition=established --timeout=60s crd/secretproviderclasses.secrets-store.csi.x-k8s.io
+
+        # 11. 部署 secret-provider.yaml，確保 secret-provider.yaml 是在 deployment.yaml 前面
         kubectl apply -f k8s/secret-provider.yaml -n $TARGET_NS
    
-        # 11. 部署 基礎組件 (Deployment, Service, HPA, Certificate, frontend-config)
+        # 12. 部署 基礎組件 (Deployment, Service, HPA, Certificate, frontend-config)
         kubectl apply -f k8s/deployment.yaml \
                       -f k8s/service.yaml \
                       -f k8s/hpa.yaml \
@@ -141,22 +145,22 @@ jobs:
                       -f k8s/frontend-config.yaml \
                       -n $TARGET_NS
 
-        # 12. 精準等待：直到 Deployment 的 Pod 全部進入 Ready 狀態
+        # 13. 精準等待：直到 Deployment 的 Pod 全部進入 Ready 狀態
         kubectl wait --for=condition=available --timeout=300s deployment/test-k8s-app-$TARGET_NS-deployment -n $TARGET_NS
 
-        # 13. 給 GCP API 多 10 秒的緩衝
+        # 14. 給 GCP API 多 10 秒的緩衝
         sleep 10
 
-        # 14. 再部署 Ingress
+        # 15. 再部署 Ingress
         kubectl apply -f k8s/ingress.yaml -n $TARGET_NS
 
-        # 15. 等待 GKE 分配 IP 給 Ingress，這能確保靜態 IP 真的被認領成功了
+        # 16. 等待 GKE 分配 IP 給 Ingress，這能確保靜態 IP 真的被認領成功了
         echo "正在等待 GKE 分配靜態 IP..."
         kubectl wait --namespace $TARGET_NS \
           --for=jsonpath='{.status.loadBalancer.ingress[0].ip}' \
           --timeout=300s ingress/test-k8s-app-$TARGET_NS-ingress
 
-        # 16. 成功後印出 IP 確認
+        # 17. 成功後印出 IP 確認
         FINAL_IP=$(kubectl get ingress test-k8s-app-$TARGET_NS-ingress -n $TARGET_NS -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
         echo "部署完成！Ingress IP 為: $FINAL_IP"
         
