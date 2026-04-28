@@ -81,8 +81,13 @@ jobs:
     # 5. 自動注入密碼
     - name: Inject Database Password
       env:
-        SECRET_NAME: "${{ vars.DB_INSTANCE_NAME }}-password"
+        APP_NAME: ${{ vars.GCP_APP_NAME }}
+        TARGET_ENV: ${{ env.TARGET_NS }}
       run: |
+        SECRET_NAME="${APP_NAME}-${TARGET_ENV}-db-password"
+
+        echo "準備寫入 Secret: $SECRET_NAME"
+        
         echo -n "${{ secrets.DB_PASSWORD }}" | gcloud secrets versions add "${SECRET_NAME}" --data-file=-
 
     # 6. 部署到 GKE
