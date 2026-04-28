@@ -14,6 +14,7 @@ spec:
       labels:
         app: test-k8s-app-RESOURCE_SUFFIX
     spec:
+      serviceAccountName: test-k8s-app-RESOURCE_SUFFIX-sa # Pod 的身分證 (test-k8s-app-prod-sa)
       containers:
       - name: test-k8s-app-container
         # 這裡填入你 Artifact Registry 裡的 Image 路徑
@@ -45,3 +46,14 @@ spec:
             port: 3000
           initialDelaySeconds: 15
           periodSeconds: 20
+        volumeMounts:
+        - name: db-secret-volume
+          mountPath: "/etc/secrets" # 應用程式會在這裡讀到 db-password 檔案
+          readOnly: true
+      volumes:
+        - name: db-secret-volume
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "db-secrets-provider"

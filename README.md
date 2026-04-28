@@ -48,7 +48,8 @@
 | :--- | :--- | :--- | :--- |
 | **Variables** | `GCP_PROJECT_ID` | `var.ai_code_review_project_id` | GCP 專案 ID |
 | **Variables** | `GCP_SERVICE_ACCOUNT` | `tf-github-test-k8s-app@...` | 用於部署的專屬 Service Account Email |
-| **Variables** | `GKE_CLUSTER_NAME` | `test-k8s-app-cluster.` | Kubernetes 叢集 |
+| **Variables** | `GKE_CLUSTER_NAME` | `test-k8s-app-cluster` | Kubernetes 叢集 |
+| **Variables** | `DB_INSTANCE_NAME` | `xxxxxx-prod-db` | DB名稱 |
 
 
 ### Repository variables 資源與變數對照表
