@@ -52,6 +52,10 @@ spec:
             port: 3000
           initialDelaySeconds: 15
           periodSeconds: 20
+        volumeMounts:
+        - name: db-secret-volume          # 必須對應 volumes 裡的 name
+          mountPath: "/mnt/secrets"       # 隨便掛載到一個路徑，只要存在即可觸發同步
+          readOnly: true
       volumes:
         - name: db-secret-volume
           csi:
