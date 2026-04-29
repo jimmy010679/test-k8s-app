@@ -21,12 +21,6 @@ spec:
         image: asia-east1-docker.pkg.dev/test-k8s-app-492717/test-k8s-app-repo/my-app:v1
         ports:
         - containerPort: 3000 # 你的程式監聽的 Port
-        env:
-        - name: DB_PASSWORD # 你的程式會透過這個環境變數讀取密碼
-          valueFrom:
-            secretKeyRef:
-              name: db-password-secret # 必須對應上面 SecretProviderClass 的 secretName
-              key: password            # 必須對應上面 SecretProviderClass 的 data key
         resources:
           requests:
             cpu: "1"         # 啟動時預留 1 核心
@@ -53,9 +47,8 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         volumeMounts:
-        - name: db-secret-volume          # 必須對應 volumes 裡的 name
-          mountPath: "/mnt/secrets"       # 隨便掛載到一個路徑，只要存在即可觸發同步
-          readOnly: true
+          - mountPath: "/var/secrets"
+            name: db-secret-volume
       volumes:
         - name: db-secret-volume
           csi:
