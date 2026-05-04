@@ -17,6 +17,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare yarn@4.13.0 --activate
 
 COPY --from=deps /app/node_modules ./node_modules
+COPY .env .env
 COPY . .
 
 # Disable Next.js telemetry
