@@ -55,7 +55,7 @@ jobs:
         echo "正在下載 $ENV_DIR 環境變數..."
 
         # 根據環境從對應的 bucket 路徑抓取檔案並存成 Docker 建置所需的 .env
-        gcloud storage cp gs://test-k8s-app-env-bucket/${{ vars.GCP_APP_NAME }}/$ENV_DIR/.env .env
+        gcloud storage cp gs://jimmy-infra-admin-shared-env-bucket/${{ vars.GCP_APP_NAME }}/$ENV_DIR/.env .env
 
     # 3. 登入 Artifact Registry (讓 Docker 具備推送到 GCP 的權限)
     - name: Docker Auth
