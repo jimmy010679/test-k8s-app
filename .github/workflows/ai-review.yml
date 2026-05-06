@@ -7,16 +7,28 @@ on:
 jobs:
   ai-review:
     runs-on: ubuntu-latest
+
+    # GitHub 的 Environment
+    # main -> prod
+    # uat -> uat
+    # dev -> dev
+    environment: >-
+      ${{ github.base_ref == 'main' && 'production' || 
+          github.base_ref == 'uat'  && 'uat' || 
+          'dev' }}
+
     permissions:
       contents: read
       pull-requests: write # 必須有寫入權限才能貼 comment
-      checks: write       # 允許寫入測試檢查結
+      checks: write        # 允許寫入測試檢查結
+      id-token: 'write'    # Google WIF
     steps:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
+      # WIF 認證
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v3'
@@ -26,6 +38,7 @@ jobs:
           workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
           service_account: '${{ vars.GCP_SERVICE_ACCOUNT }}'
 
+      # 下載環境變數 .env
       - name: Download Environment File from GCS
         run: |-
           # 根據 PR 的目標分支決定環境 (github.base_ref)
