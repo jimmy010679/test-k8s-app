@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: test-k8s-app-frontend-RESOURCE_SUFFIX-service
+  annotations:
+    cloud.google.com/backend-config: '{"default": "test-k8s-app-frontend-RESOURCE_SUFFIX-be-config"}'
 spec:
   selector:
     app: test-k8s-app-frontend-RESOURCE_SUFFIX # 必須對應到 Deployment 的 labels

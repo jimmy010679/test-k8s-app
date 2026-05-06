@@ -153,6 +153,7 @@ jobs:
                       -f k8s/hpa.yaml \
                       -f k8s/certificate.yaml \
                       -f k8s/frontend-config.yaml \
+                      -f k8s/backend-config.yaml \
                       -n $TARGET_NS
 
         # 13. 精準等待：直到 Deployment 的 Pod 全部進入 Ready 狀態

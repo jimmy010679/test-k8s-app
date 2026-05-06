@@ -1,0 +1,10 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: test-k8s-app-frontend-RESOURCE_SUFFIX-be-config
+spec:
+  healthCheck:
+    checkIntervalSec: 15
+    port: 3000         # 強制指定檢查 3000
+    type: HTTP
+    requestPath: /healthz
