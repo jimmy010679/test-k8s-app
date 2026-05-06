@@ -1,10 +1,24 @@
+"use client";
 import styles from "./page.module.css";
+import { useState, useEffect } from 'react'; // Import useState and useEffect
 
 export default function Home() {
+  const [currentDateTime, setCurrentDateTime] = useState<string>('');
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // Update the date and time every second
+      setCurrentDateTime(new Date().toLocaleString());
+    }, 1000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(timer);
+  }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
+
   return (
     <div className={styles.page}>
       <h1>基於 IaC 與無密鑰架構的跨專案雲端自動化部署</h1>
-      <p>2026/05/07</p>
+      <p>{currentDateTime}</p> {/* Display dynamic date and time */}
       <p>AI Code Review: 整合 Gemini API，每當開發者開啟 PR 或更新內容時，系統會自動進行代碼審查。</p>
       <p>AI Issue 自動修復: 透過 GitHub Issues 觸發，實現 AI 發 PR。</p>
       <p>自動化流程: 構建完整 CI/CD Pipeline，實現程式碼推送後會自動觸發構建。</p>
