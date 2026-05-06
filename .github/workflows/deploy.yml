@@ -36,7 +36,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v5
 
-    # 1. WIF 認證 (這部分與你原本的 IaC workflow 類似)
+    # 1. WIF 認證
     - id: 'auth'
       name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@v3'
@@ -55,7 +55,7 @@ jobs:
         echo "正在下載 $ENV_DIR 環境變數..."
 
         # 根據環境從對應的 bucket 路徑抓取檔案並存成 Docker 建置所需的 .env
-        gcloud storage cp gs://jimmy-infra-admin-shared-env-bucket/${{ vars.GCP_APP_NAME }}/$ENV_DIR/.env .env
+        gcloud storage cp gs://${{ vars.GCP_APP_NAME }}-env-bucket/$ENV_DIR/.env .env
 
     # 3. 登入 Artifact Registry (讓 Docker 具備推送到 GCP 的權限)
     - name: Docker Auth
@@ -80,7 +80,7 @@ jobs:
         docker push "$REPO_URL:${{ github.sha }}"
         docker push "$REPO_URL:$TARGET_NS"
         
-    # 5. 獲取 GKE 憑證 (連結到你的 K8s 工地)
+    # 5. 獲取 GKE 憑證
     - name: Set up GKE credentials
       uses: 'google-github-actions/get-gke-credentials@v3'
       with:
@@ -103,7 +103,7 @@ jobs:
     # 7. 部署到 GKE
     - name: Deploy to GKE
       run: |-
-        # 1. 決定對應的網域 (請將 kyjhome.com 換成你的實際網域)
+        # 1. 決定對應的網域
         if [ "$TARGET_NS" == "prod" ]; then
           DOMAIN="test-k8s-app.kyjhome.com"
         else
@@ -156,7 +156,7 @@ jobs:
                       -n $TARGET_NS
 
         # 13. 精準等待：直到 Deployment 的 Pod 全部進入 Ready 狀態
-        kubectl wait --for=condition=available --timeout=300s deployment/test-k8s-app-$TARGET_NS-deployment -n $TARGET_NS
+        kubectl wait --for=condition=available --timeout=300s deployment/test-k8s-app-frontend-$TARGET_NS-deployment -n $TARGET_NS
 
         # 14. 給 GCP API 多 10 秒的緩衝
         sleep 10

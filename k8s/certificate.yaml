@@ -1,7 +1,7 @@
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
-  name: test-k8s-app-RESOURCE_SUFFIX-cert
+  name: test-k8s-app-frontend-RESOURCE_SUFFIX-cert
 spec:
   domains:
     - DOMAIN_NAME_PLACEHOLDER # 交給 deploy.yml 替換

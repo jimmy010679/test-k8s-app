@@ -1,20 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-k8s-app-RESOURCE_SUFFIX-deployment
+  name: test-k8s-app-frontend-RESOURCE_SUFFIX-deployment
   labels:
-    app: test-k8s-app-RESOURCE_SUFFIX
+    app: test-k8s-app-frontend-RESOURCE_SUFFIX
+    tier: frontend
 spec:
-  replicas: 2 # 跑兩個副本，達成高可用性
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
-      app: test-k8s-app-RESOURCE_SUFFIX
+      app: test-k8s-app-frontend-RESOURCE_SUFFIX
+      tier: frontend
   template:
     metadata:
       labels:
-        app: test-k8s-app-RESOURCE_SUFFIX
+        app: test-k8s-app-frontend-RESOURCE_SUFFIX
+        tier: frontend
     spec:
-      serviceAccountName: test-k8s-app-RESOURCE_SUFFIX-sa # Pod 的身分證 (test-k8s-app-prod-sa)
+      serviceAccountName: test-k8s-app-frontend-RESOURCE_SUFFIX-sa # Pod 的身分證 (test-k8s-app-frontend-prod-sa)
       containers:
       - name: test-k8s-app-container
         # 這裡填入你 Artifact Registry 裡的 Image 路徑
@@ -55,4 +63,4 @@ spec:
             driver: secrets-store-gke.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: "db-secrets-provider"
+              secretProviderClass: "test-k8s-app-frontend-RESOURCE_SUFFIX-secrets-provider"
