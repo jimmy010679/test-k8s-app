@@ -17,7 +17,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      # 1. WIF 認證
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v3'
@@ -27,7 +26,6 @@ jobs:
           workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
           service_account: '${{ vars.GCP_SERVICE_ACCOUNT }}'
 
-      # 2. 判定目標環境並下載 .env 檔
       - name: Download Environment File from GCS
         run: |-
           # 根據 PR 的目標分支決定環境 (github.base_ref)
@@ -63,9 +61,10 @@ jobs:
 
       - name: Run Gemini Review
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_CODE_REVIEWER_MODEL: ${{ vars.GEMINI_CODE_REVIEWER_MODEL }}
+          GEMINI_CLI_TRUST_WORKSPACE: true
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: node scripts/gemini-reviewer.js pr_diff.txt
 

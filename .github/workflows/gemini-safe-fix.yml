@@ -40,6 +40,32 @@ jobs:
         with:
           ref: ${{ env.TARGET_BRANCH }} # 使用解析出的變數切換到對應分支
 
+      # WIF 認證
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v3'
+        with:
+          token_format: 'access_token'
+          project_id: '${{ vars.GCP_PROJECT_ID }}'
+          workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
+          service_account: '${{ vars.GCP_SERVICE_ACCOUNT }}'
+
+      # 判定目標環境並下載 .env 檔
+      - name: Download Environment File from GCS
+        run: |-
+          # 根據 PR 的目標分支決定環境 TARGET_BRANCH
+          case "${{ env.TARGET_BRANCH }}" in
+            "main") TARGET_ENV="prod" ;;
+            "uat")  TARGET_ENV="uat" ;;
+            "dev")  TARGET_ENV="dev" ;;
+            *)      TARGET_ENV="dev" ;;
+          esac
+
+          echo "目標分支為 ${{ env.TARGET_BRANCH }}，正在下載 $TARGET_ENV 環境變量..."
+          
+          # 從 GCS 桶下載
+          gcloud storage cp gs://${{ vars.GCP_APP_NAME }}-env-bucket/$TARGET_ENV/.env .env
+
       - name: Enable Corepack
         run: corepack enable
 
@@ -60,6 +86,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_AUTO_FIX_MODEL: '${{ vars.GEMINI_AUTO_FIX_MODEL }}'
+          GEMINI_CLI_TRUST_WORKSPACE: true
           MAX_RETRIES: 3 # 最多重試 3 次，控制 API 成本
         run: |
           attempt=1
