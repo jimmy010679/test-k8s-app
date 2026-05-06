@@ -7,6 +7,16 @@ on:
 jobs:
   ai-review:
     runs-on: ubuntu-latest
+    
+    # GitHub 的 Environment
+    # main -> prod
+    # uat -> uat
+    # dev -> dev
+    environment: >-
+      ${{ github.ref_name == 'main' && 'production' || 
+          github.ref_name == 'uat'  && 'uat' || 
+          'dev' }}
+
     permissions:
       contents: read
       pull-requests: write # 必須有寫入權限才能貼 comment
