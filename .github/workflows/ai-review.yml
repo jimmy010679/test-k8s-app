@@ -10,7 +10,8 @@ jobs:
     permissions:
       contents: read
       pull-requests: write # 必須有寫入權限才能貼 comment
-      checks: write       # 允許寫入測試檢查結
+      checks: write        # 允許寫入測試檢查結
+      id-token: 'write'    # Google WIF
     steps:
       - uses: actions/checkout@v5
         with:
