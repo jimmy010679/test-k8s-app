@@ -4,20 +4,49 @@ on:
     types: [labeled]
 
 jobs:
-  safe_fix:
+  # 第一階段：解析環境與分支 (不掛載 Environment，僅做字串處理)
+  prepare:
     if: github.event.label.name == 'fix-me'
     runs-on: ubuntu-latest
+    outputs:
+      ENV_NAME: ${{ steps.set_env.outputs.ENV_NAME }}
+      TARGET_BRANCH: ${{ steps.set_env.outputs.TARGET_BRANCH }}
+    steps:
+      - name: Parse Issue Body
+        id: set_env
+        run: |
+          # 1. 使用 HEREDOC 讀取 Body 並解析分支
+          cat << 'EOF' > issue_body.txt
+          ${{ github.event.issue.body }}
+          EOF
 
-    # GitHub 的 Environment
-    # main -> prod
-    # uat -> uat
-    # dev -> dev
-    environment: >-
-      ${{ github.ref_name == 'main' && 'production' || 
-          github.ref_name == 'uat'  && 'uat' || 
-          'dev' }}
+          TARGET_BRANCH=$(grep -A 2 "目標修復環境" issue_body.txt | grep -v "目標修復環境" | grep -v "^$" | head -n 1 | xargs)
 
+          if [ -z "$TARGET_BRANCH" ]; then
+            TARGET_BRANCH="main"
+          fi
+
+          # 2. 轉換為 GitHub Environment 名稱 (對應你設定的 production/uat/dev)
+          if [ "$TARGET_BRANCH" == "main" ]; then
+            ENV="production"
+          elif [ "$TARGET_BRANCH" == "uat" ]; then
+            ENV="uat"
+          else
+            ENV="dev"
+          fi
+
+          echo "解析結果: 分支=$TARGET_BRANCH, 環境=$ENV"
+          echo "ENV_NAME=$ENV" >> $GITHUB_OUTPUT
+          echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+
+  # 第二階段：執行 AI 修復任務 (動態掛載正確的 Environment)
+  safe_fix:
+    needs: [prepare]
+    runs-on: ubuntu-latest
     timeout-minutes: 15 # 第一道保險：超過 15 分鐘強制關閉，防止 Runner 燒錢
+
+    # 根據第一階段的輸出，動態綁定環境以取得 WIF 變數
+    environment: ${{ needs.prepare.outputs.ENV_NAME }}
 
     permissions:
       contents: write      # 允許推送代碼 (Branch)
@@ -25,26 +54,10 @@ jobs:
       issues: read         # 允許讀取 Issue 內容
       id-token: 'write'    # Google WIF
 
+    env:
+      TARGET_BRANCH: ${{ needs.prepare.outputs.TARGET_BRANCH }}
+
     steps:
-      - name: Parse Target Branch from Issue Body
-        id: parse_branch
-        run: |
-          # 1. 使用 HEREDOC 將 Body 安全地寫入臨時文件，避免 Shell 解析錯誤
-          cat << 'EOF' > issue_body.txt
-          ${{ github.event.issue.body }}
-          EOF
-
-          # 2. 從文件中解析目標分支
-          # grep -A 2 確保跳過空行，grep -v 排除標題與空行，xargs 清除前後空白
-          TARGET_BRANCH=$(grep -A 2 "目標修復環境" issue_body.txt | grep -v "目標修復環境" | grep -v "^$" | head -n 1 | xargs)
-
-          # 3. 安全檢查：若抓不到則預設 main
-          if [ -z "$TARGET_BRANCH" ]; then
-            TARGET_BRANCH="main"
-          fi
-
-          echo "解析到的目標分支為: $TARGET_BRANCH"
-          echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
 
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -61,7 +74,7 @@ jobs:
           workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
           service_account: '${{ vars.GCP_SERVICE_ACCOUNT }}'
 
-      # 判定目標環境並下載 .env 檔
+      # 下載環境變數 .env
       - name: Download Environment File from GCS
         run: |-
           # 根據 PR 的目標分支決定環境 TARGET_BRANCH
