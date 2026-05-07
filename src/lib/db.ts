@@ -1,46 +1,55 @@
 import postgres from 'postgres';
 import fs from 'fs';
 
-
 const getPassword = (): string => {
+  console.log('[DB-追蹤] 開始執行 getPassword() 邏輯...');
+  
   if (process.env.NEXT_PHASE === 'phase-production-build') {
+    console.log('[DB-追蹤] 檢測到構建階段，返回佔位符');
     return 'build_placeholder';
   }
 
   try {
     const path = process.env.DB_PASSWORD_PATH || '/var/secrets/db-password.txt';
+    console.log(`[DB-追蹤] 嘗試讀取密碼文件路徑: ${path}`);
+    
     if (fs.existsSync(path)) {
-      // 讀取並強制執行 .trim() 確保密碼純淨
-      const content = fs.readFileSync(path, 'utf8').trim();
-      return content;
+      const content = fs.readFileSync(path, 'utf8');
+      const trimmed = content.trim();
+      
+      console.log(`[DB-追蹤] ✅ 密碼讀取成功！`);
+      console.log(`[DB-追蹤] 原始長度: ${content.length}, Trim後長度: ${trimmed.length}`);
+      console.log(`[DB-追蹤] 密碼前兩個字符: ${trimmed.substring(0, 2)}`);
+      
+      return trimmed;
+    } else {
+      console.error(`[DB-追蹤] ❌ 找不到密碼文件: ${path}`);
     }
-    console.error(`[Database] 未找到密碼文件路徑: ${path}`);
   } catch (err) {
-    console.error('[Database] 密碼文件讀取異常:', err);
+    console.error('[DB-追蹤] ❌ 密碼讀取異常:', err);
   }
   return '';
 };
-
 
 let sql: ReturnType<typeof postgres> | null = null;
 
 export const getSql = () => {
   if (!sql) {
+    console.log("[DB-追蹤] 正在初始化 postgres 連接池...");
+    const dbPassword = getPassword();
+    
     sql = postgres({
-      host: process.env.DB_HOST,           // 10.10.0.2 
+      host: process.env.DB_HOST,           
       port: parseInt(process.env.DB_PORT || '5432'),
-      database: process.env.DB_NAME,       // test_k8s_app_main 
-      username: process.env.DB_USER,       // app_runner 
-      password: getPassword(),             // 呼叫上述防禦邏輯
-      
-      // 連接池配置
-      max: 20,                             // 最大連接數
-      idle_timeout: 30,                    // 閒置連線釋放時間 (秒)
-      connect_timeout: 5,                  // 連線超時時間 (秒)
-      
-      // 非生產環境下開啟查詢日誌
+      database: process.env.DB_NAME,       
+      username: process.env.DB_USER,       
+      password: dbPassword, 
+      max: 20,                             
+      idle_timeout: 30,                    
+      connect_timeout: 5,                  
       debug: process.env.NODE_ENV !== 'production'
     });
+    console.log("[DB-追蹤] postgres 連接池初始化完成");
   }
   return sql;
 };

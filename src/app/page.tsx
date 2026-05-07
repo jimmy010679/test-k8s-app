@@ -7,11 +7,9 @@ import styles from "./page.module.css";
 async function fetchDbStatus() {
   try {
     const sql = getSql();
-    // 執行數據查詢
     const result = await sql`SELECT NOW()`; 
     return result[0].now.toLocaleString(); 
   } catch (error: unknown) {
-    // 解決 @typescript-eslint/no-explicit-any 報錯
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('數據庫請求異常:', errorMessage);
     return "error";
