@@ -1,20 +1,20 @@
 export const dynamic = 'force-dynamic';
 
-import pool from '@/lib/db';
+import sql from '@/lib/db';
 
 import styles from "./page.module.css";
 
 async function fetchDbStatus() {
-  const client = await pool.connect();
   try {
-    // 簡單測試連線是否成功
-    const result = await client.query('SELECT NOW() as current_time');
-    return result.rows[0].current_time;
-  } catch (err) {
-    console.error('數據庫查詢錯誤', err);
-    return '連線失敗';
-  } finally {
-    client.release(); // 務必釋放連線
+    const result = await sql`SELECT NOW()`; 
+    return result[0].now;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('API Error:', error.message);
+    } else {
+      console.error('發生未知錯誤:', error);
+    }
+    return "error";
   }
 }
 

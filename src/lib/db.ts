@@ -1,39 +1,42 @@
-import { Pool } from 'pg';
+import postgres from 'postgres';
 import fs from 'fs';
 
-const getPassword = () => {
-  // 優先處理構建階段，避免編譯時連線失敗
-  if (process.env.NEXT_PHASE === 'phase-production-build') return 'build_placeholder';
+/**
+ * 嚴格處理密碼讀取邏輯
+ */
+const getPassword = (): string => {
+  // 處理 Next.js 構建階段，防止編譯時報錯
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return 'build_placeholder';
+  }
 
   try {
     const path = process.env.DB_PASSWORD_PATH || '/var/secrets/db-password.txt';
-    return fs.readFileSync(path, 'utf8').trim();
+    if (fs.existsSync(path)) {
+      // 讀取並強制去除換行符，確保密碼純淨
+      return fs.readFileSync(path, 'utf8').trim();
+    }
   } catch (err) {
-    console.error('Failed to read DB password:', err);
-    return '';
+    console.error('[DB] 讀取密碼檔案失敗:', err);
   }
+  return '';
 };
 
-const pool: Pool = global.pgPool || new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  database: process.env.DB_NAME,
+// 初始化連線配置
+const sql = postgres({
+  host: process.env.DB_HOST,           // 例如: 10.10.0.2 
   port: parseInt(process.env.DB_PORT || '5432'),
-  password: getPassword(),
-
-  // 允許連線池建立的最大連線數
-  max: 50,
-
-  // 連線閒置多久後會被釋放
-  idleTimeoutMillis: 30000,
-
-  // 嘗試建立連線的最長等待時間
-  connectionTimeoutMillis: 2000,
+  database: process.env.DB_NAME,       // 例如: test_k8s_app_main 
+  username: process.env.DB_USER,       // 例如: app_runner 
+  password: getPassword(),             // 呼叫上述讀取邏輯
+  
+  // postgres.js 內建強大的連線池管理
+  max: 20,                             // 最大連線數
+  idle_timeout: 30,                    // 閒置連線釋放時間 (秒)
+  connect_timeout: 5,                  // 連線超時 (秒)
+  
+  // 除錯輔助：只有在非生產環境才印出查詢 (可選)
+  debug: process.env.NODE_ENV !== 'production'
 });
 
-// 在非生產環境下，將連接池掛載到全局，防止熱重載 (Hot Reload) 導致連線數爆滿
-if (process.env.NODE_ENV !== 'production') {
-  global.pgPool = pool;
-}
-
-export default pool;
+export default sql;
