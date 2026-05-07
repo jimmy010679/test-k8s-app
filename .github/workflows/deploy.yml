@@ -88,19 +88,7 @@ jobs:
         cluster_name: '${{ env.CLUSTER_NAME }}'
         location: '${{ env.CLUSTER_LOCATION }}'
 
-    # 6. 自動注入密碼
-    - name: Inject Database Password
-      env:
-        APP_NAME: ${{ vars.GCP_APP_NAME }}
-        TARGET_ENV: ${{ env.TARGET_NS }}
-      run: |
-        SECRET_NAME="${APP_NAME}-${TARGET_ENV}-db-password"
-
-        echo "準備寫入 Secret: $SECRET_NAME"
-
-        echo -n "${{ secrets.DB_PASSWORD }}" | gcloud secrets versions add "${SECRET_NAME}" --data-file=-
-
-    # 7. 部署到 GKE
+    # 6. 部署到 GKE
     - name: Deploy to GKE
       run: |-
         # 1. 決定對應的網域

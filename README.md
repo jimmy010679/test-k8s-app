@@ -46,7 +46,6 @@
 
 | 類型           | GitHub 變數名稱        | Terraform 資源 / 屬性             | 說明 |
 | :---          | :---                  | :---                            | :--- |
-| **Secrets**   | `DB_PASSWORD`         | `var.ai_code_review_project_id` | DB 密碼 |
 | **Variables** | `GCP_APP_NAME`        | `test-k8s-app`                  | GCP 專案名稱 |
 | **Variables** | `GCP_PROJECT_ID`      | `test-k8s-app-xxxx`             | GCP 專案 ID |
 | **Variables** | `GCP_SERVICE_ACCOUNT` | `tf-github-test-k8s-app@...`    | 用於部署的專屬 Service Account Email |
@@ -116,14 +115,16 @@ docker run -d -p 3000:3000 --name test-k8s-app-container test-k8s-app
 
 ```text
 .
-├── .github/workflows/   # CI/CD 流程定義 (部署、AI 審查、自動修復)
-├── k8s/                 # Kubernetes 資源定義
-│   ├── deployment.yaml  # 應用程式容器定義
-│   ├── service.yaml     # 內部服務負載平衡
-│   ├── ingress.yaml     # 外部流量入口與 SSL 配置
-│   ├── certificate.yaml # Google 託管憑證定義
-│   └── frontend-config.yaml # HTTP 轉 HTTPS 重定向配置
-├── terraform/           # 雲端基礎設施代碼
-└── src/                 # Next.js 應用程式原始碼
+├── .github/workflows/            # CI/CD 流程定義 (部署、AI 審查、自動修復)
+├── k8s/                          # Kubernetes 資源定義
+│   ├── backend-config.yaml
+│   ├── certificate.yaml          # Google 託管憑證定義
+│   ├── deployment.yaml           # 應用程式容器定義
+│   ├── frontend-config.yaml      # HTTP 轉 HTTPS 重定向配置
+│   ├── hpa.yaml
+│   ├── ingress.yaml              # 外部流量入口與 SSL 配置
+│   ├── secret-provider.yaml
+│   └──service.yaml              # 內部服務負載平衡
+└── src/                          # Next.js 應用程式原始碼
 ```
 
