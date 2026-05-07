@@ -13,7 +13,17 @@
 
 ---
 
-## ✨ AI 驅動開發流程
+## 🌟 架構核心亮點
+
+本項目在架構設計上實現了多項進階雲原生實踐：
+
+* **無密鑰安全架構 (Keyless Authentication)**：全面捨棄長期有效的 Service Account Key，導入 **Workload Identity Federation (WIF)**，實現 GitHub Actions 與 GCP 之間的短效、動態權限交換，大幅提升部署安全性。
+* **多 VPC 分層網絡架構 (Multi-VPC Architecture)**：配合底層的基礎設施設計，應用程序運行於專屬的 App VPC，並透過 **Private Service Connect (PSC)** 存取 Data VPC 中的 Cloud SQL，確保數據層的絕對隔離與私密性。
+* **基礎設施與應用代碼解耦 (IaC Separation)**：本項目的雲端基礎設施 (GKE, VPC, Artifact Registry 等) 統一交由 Terraform 管理，相關配置存放在獨立的 **[gcp-infra-core](https://github.com/jimmy010679/gcp-infra-core)** 項目中，確保環境的標準化與可複製性。
+
+---
+
+## ✨ AI 應用
 
 ### 1. 🛠️ AI Issue 自動修復 (Issue Auto-Fix)
 透過 GitHub Issues 觸發的 **Self-healing** 機制，實現「貼標籤，AI 發 PR」：
