@@ -1,22 +1,17 @@
 import { Pool } from 'pg';
 import fs from 'fs';
-import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 
-const getPassword = (): string => {
-  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
-    console.log('Build階段');
-    return "build_placeholder";
+const getPassword = () => {
+  // 優先處理構建階段，避免編譯時連線失敗
+  if (process.env.NEXT_PHASE === 'phase-production-build') return 'build_placeholder';
+
+  try {
+    const path = process.env.DB_PASSWORD_PATH || '/var/secrets/db-password.txt';
+    return fs.readFileSync(path, 'utf8').trim();
+  } catch (err) {
+    console.error('Failed to read DB password:', err);
+    return '';
   }
-
-  const passwordPath = process.env.DB_PASSWORD_PATH || '/var/secrets/db-password.txt';
-
-  if (fs.existsSync(passwordPath)) {
-    return fs.readFileSync(passwordPath, 'utf8').trim();
-  }
-
-  console.error(`[DB] 密碼檔案異常：找不到資料庫密碼檔案 ${passwordPath}`);
-
-  throw new Error(`[DB] 密碼檔案異常：找不到資料庫密碼檔案 ${passwordPath}`);
 };
 
 const pool: Pool = global.pgPool || new Pool({
