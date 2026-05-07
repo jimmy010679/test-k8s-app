@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import pool from '@/lib/db';
 
 import styles from "./page.module.css";

@@ -1,15 +1,22 @@
 import { Pool } from 'pg';
 import fs from 'fs';
+import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 
 const getPassword = (): string => {
-  const passwordPath = process.env.DB_PASSWORD_PATH || '/var/secrets/db-password.txt';
-  
-  try {
-    return fs.readFileSync(passwordPath, 'utf8').trim();
-  } catch (error) {
-    console.error(`無法讀取密碼文件於 ${passwordPath}:`, error);
-    throw new Error('數據庫認證失敗：無法讀取密碼文件。');
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) {
+    console.log('Build階段');
+    return "build_placeholder";
   }
+
+  const passwordPath = process.env.DB_PASSWORD_PATH || '/var/secrets/db-password.txt';
+
+  if (fs.existsSync(passwordPath)) {
+    return fs.readFileSync(passwordPath, 'utf8').trim();
+  }
+
+  console.error(`[DB] 密碼檔案異常：找不到資料庫密碼檔案 ${passwordPath}`);
+
+  throw new Error(`[DB] 密碼檔案異常：找不到資料庫密碼檔案 ${passwordPath}`);
 };
 
 const pool: Pool = global.pgPool || new Pool({
