@@ -11,7 +11,7 @@ async function fetchDbStatus() {
     return result[0].now.toLocaleString(); 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('數據庫請求異常:', errorMessage);
+    console.error('[Database] 資料庫請求異常:', errorMessage);
     return "error";
   }
 }
