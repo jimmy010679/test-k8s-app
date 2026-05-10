@@ -29,6 +29,7 @@ spec:
         image: asia-east1-docker.pkg.dev/test-k8s-app-492717/test-k8s-app-repo/my-app:v1
         ports:
         - containerPort: 3000 # 你的程式監聽的 Port
+          name: http
         resources:
           requests:
             cpu: "1"         # 啟動時預留 1 核心

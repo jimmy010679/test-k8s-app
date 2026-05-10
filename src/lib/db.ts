@@ -3,24 +3,33 @@ import fs from 'fs';
 
 let sql: ReturnType<typeof postgres> | null = null;
 
+const getDatabasePassword = () => {
+  const path = process.env.DB_PASSWORD_PATH || '/var/secrets/db-password.txt';
+  
+  try {
+    if (fs.existsSync(path)) {
+      console.log(`[Database] 🚀 從掛載文件讀取密碼: ${path}`);
+      return fs.readFileSync(path, 'utf8').trim();
+    }
+  } catch (err) {
+    console.error('[Database] ❌ 讀取密碼文件異常:', err);
+  }
+
+  // 如果文件不存在，則讀取環境變量（適用於本地 .env.local）
+  if (process.env.DB_PASSWORD) {
+    console.log('[Database] 💻 檢測到掛載文件不存在，使用環境變量 DB_PASSWORD');
+    return process.env.DB_PASSWORD;
+  }
+
+  console.warn('[Database] ⚠️ 未找到任何有效的密碼配置');
+  return '';
+};
+
 export const getSql = () => {
   if (!sql) {
     console.log("[Database] 正在初始化 postgres 連接池... (運行時觸發)");
     
-    let dbPassword = '';
-    const path = process.env.DB_PASSWORD_PATH || '/var/secrets/db-password.txt';
-    
-    try {
-      console.log(`[Database] 嘗試讀取路徑: ${path}`);
-      if (fs.existsSync(path)) {
-        dbPassword = fs.readFileSync(path, 'utf8').trim();
-        console.log(`[Database] ✅ 讀取成功！長度: ${dbPassword.length}`);
-      } else {
-        console.error(`[Database] ❌ 檔案不存在: ${path}`);
-      }
-    } catch (err) {
-      console.error('[Database] ❌ 讀取異常:', err);
-    }
+    const dbPassword = getDatabasePassword();
 
     sql = postgres({
       host: process.env.DB_HOST,           

@@ -101,14 +101,54 @@
 
 ## 💻 本地開發 (Local Development)
 
-### 1. 安裝與執行
+
+### 1. 環境變數，參考 .env.example
+
+#### 本機開發範例
+
+- NEXT_PUBLIC_APP_ENV: 環境 (local)
+- NEXT_PUBLIC_SITENAME: 網站名稱
+- NEXT_PUBLIC_DESCRIPTION: 網站說明
+- DB_USER: 使用者
+- DB_NAME: 資料庫名
+- DB_PORT: 資料庫PORT號
+- DB_PASSWORD: 資料庫密碼
+
+```env
+NEXT_PUBLIC_APP_ENV=local
+NEXT_PUBLIC_SITENAME="TEST"
+NEXT_PUBLIC_DESCRIPTION="TEST"
+DB_USER= "app_runner"
+DB_NAME= "test_k8s_app_main"
+DB_PORT= "5432"
+DB_PASSWORD=your_local_password_here
+```
+
+#### 線上範例 (Cloud/K8s)
+
+- NEXT_PUBLIC_APP_ENV: 環境 (prod, uat, dev)
+- NEXT_PUBLIC_SITENAME: 網站名稱
+- NEXT_PUBLIC_DESCRIPTION: 網站說明
+- DB_USER: 不用填寫，由 K8s ConfigMap 注入同名變量
+- DB_NAME: 不用填寫，由 K8s ConfigMap 注入同名變量
+- DB_PORT: 不用填寫，由 K8s ConfigMap 注入同名變量
+- DB_PASSWORD: 不用填寫，改由 DB_PASSWORD_PATH 控制讀取密碼檔案位子
+- DB_PASSWORD_PATH: 不用填寫，由 K8s ConfigMap 注入同名變量
+
+```env
+NEXT_PUBLIC_APP_ENV=prod
+NEXT_PUBLIC_SITENAME="TEST"
+NEXT_PUBLIC_DESCRIPTION="TEST"
+```
+
+### 2. 安裝與執行
 ```bash
 corepack enable
 yarn install
 yarn dev
 ```
 
-### 2. Docker 本地測試
+### 3. Docker 本地測試
 ```bash
 # 建置
 docker build -t test-k8s-app .
