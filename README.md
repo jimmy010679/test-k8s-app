@@ -141,7 +141,16 @@ NEXT_PUBLIC_SITENAME="TEST"
 NEXT_PUBLIC_DESCRIPTION="TEST"
 ```
 
-### 2. 安裝與執行
+### 3. 把資料庫通道硬設在本機上，需登入GCP，搭配 **[gcp-infra-core](https://github.com/jimmy010679/gcp-infra-core)** 專案，使用跳板機+IAP
+```bash
+gcloud compute ssh test-k8s-app-prod-bastion \
+    --tunnel-through-iap \
+    --project test-k8s-app-492717 \
+    --zone asia-east1-a \
+    -- -L 5432:10.10.0.2:5432 -N
+```
+
+### 2. 安裝與執行開發
 ```bash
 corepack enable
 yarn install
