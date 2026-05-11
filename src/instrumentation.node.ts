@@ -5,7 +5,7 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { CompositePropagator, W3CTraceContextPropagator, W3CBaggagePropagator } from '@opentelemetry/core';
 import { CloudPropagator } from '@google-cloud/opentelemetry-cloud-trace-propagator';
-import { ParentBasedSampler, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base';
+import { TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base';
 
 const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 
@@ -36,10 +36,7 @@ if (otlpEndpoint) {
       ],
     }),
 
-    sampler: new ParentBasedSampler({
-      // 抽樣率，例如 5% (0.05)
-      root: new TraceIdRatioBasedSampler(0.05) 
-    }),
+    sampler: new TraceIdRatioBasedSampler(1.0),
 
     // 自動掛載常用的 Node.js 追蹤 (如 HTTP 請求、資料庫查詢等)
     instrumentations: [getNodeAutoInstrumentations()],
