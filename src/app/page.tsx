@@ -1,19 +1,36 @@
 export const dynamic = 'force-dynamic';
-
+import { trace } from '@opentelemetry/api';
 import { getSql } from '@/lib/db';
 
 import styles from "./page.module.css";
 
 async function fetchDbStatus() {
-  try {
-    const sql = getSql();
-    const result = await sql`SELECT NOW()`; 
-    return result[0].now.toLocaleString(); 
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('[Database] 資料庫請求異常:', errorMessage);
-    return "error";
-  }
+  const tracer = trace.getTracer('next-app-tracer');
+
+  // 手動開啟一個名為 "DB: SELECT NOW" 的 Span
+  return await tracer.startActiveSpan('DB: SELECT NOW', async (span) => {
+    try {
+      const sql = getSql();
+      const result = await sql`SELECT NOW()`; 
+
+      // tracer 標記這段追蹤為成功
+      span.setStatus({ code: 1 }); // 1 = OK
+
+      return result[0].now.toLocaleString(); 
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('[Database] 資料庫請求異常:', errorMessage);
+
+      // tracer 紀錄失敗與錯誤訊息
+      span.recordException(errorMessage);
+      span.setStatus({ code: 2, message: errorMessage }); // 2 = ERROR
+
+      return "error";
+    } finally {
+      // tracer 關閉 Span
+      span.end();
+    }
+  });
 }
 
 export default async function Home() {
