@@ -129,7 +129,6 @@ jobs:
         sed -i "s|RESOURCE_SUFFIX|$TARGET_NS|g" k8s/*.yaml
 
         # 10. 檢查 SecretProviderClass CRD 是否就緒
-        echo "檢查 SecretProviderClass CRD 是否就緒..."
         kubectl wait --for=condition=established --timeout=60s crd/secretproviderclasses.secrets-store.csi.x-k8s.io
 
         # 11. 部署 secret-provider.yaml，確保 secret-provider.yaml 是在 deployment.yaml 前面

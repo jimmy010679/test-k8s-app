@@ -52,7 +52,7 @@
 本專案的雲端基礎架構採用 **Terraform** 進行管理，相關配置於另一個 **[gcp-infra-core](https://github.com/jimmy010679/gcp-infra-core)** 專案中。這種方式確保了環境的可複製性與安全性。
 
 ### Environment variables 資源與變數對照表
-請在 Environment variables 的 production/uat/development 新增下面三個變數：
+請在 Environment variables 的 production/uat/development 新增下面變數：
 
 | 類型           | GitHub 變數名稱        | Terraform 資源 / 屬性             | 說明 |
 | :---          | :---                  | :---                            | :--- |
@@ -150,14 +150,14 @@ gcloud compute ssh test-k8s-app-prod-bastion \
     -- -L 5432:10.10.0.2:5432 -N
 ```
 
-### 2. 安裝與執行開發
+### 4. 安裝與執行開發
 ```bash
 corepack enable
 yarn install
 yarn dev
 ```
 
-### 3. Docker 本地測試
+### 5. Docker 本地測試
 ```bash
 # 建置
 docker build -t test-k8s-app .
