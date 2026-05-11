@@ -1,3 +1,4 @@
+import { IncomingMessage } from 'http';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { resourceFromAttributes } from '@opentelemetry/resources';
@@ -36,10 +37,27 @@ if (otlpEndpoint) {
       ],
     }),
 
-    sampler: new TraceIdRatioBasedSampler(1.0),
+    // 採樣率 5%
+    sampler: new TraceIdRatioBasedSampler(0.05),
 
     // 自動掛載常用的 Node.js 追蹤 (如 HTTP 請求、資料庫查詢等)
-    instrumentations: [getNodeAutoInstrumentations()],
+    instrumentations: [
+      getNodeAutoInstrumentations({
+        '@opentelemetry/instrumentation-http': {
+          // 忽略特定的請求，回傳 true 代表「不要追蹤」
+          ignoreIncomingRequestHook: (req: IncomingMessage) => {
+            if (!req.url) return false;
+            
+            // 排除路徑
+            const isHealthCheck = req.url.startsWith('/healthz');
+            const isMetrics = req.url.startsWith('/metrics');
+            const isNextStatic = req.url.startsWith('/_next');
+            
+            return isHealthCheck || isMetrics || isNextStatic;
+          },
+        },
+      })
+    ],
   });
 
   sdk.start();
