@@ -57,7 +57,7 @@ spec:
           periodSeconds: 20
         envFrom:
           - configMapRef:
-              name: test-k8s-app-RESOURCE_SUFFIX-config
+              name: test-k8s-app-frontend-RESOURCE_SUFFIX-config
         volumeMounts:
           - mountPath: "/var/secrets"
             name: db-secret-volume

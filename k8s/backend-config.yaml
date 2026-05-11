@@ -9,4 +9,4 @@ spec:
     type: HTTP
     requestPath: /healthz
   securityPolicy: # 綁定 Cloud Armor 策略
-    name: "test-k8s-app-RESOURCE_SUFFIX-block-metrics-access" # 對應 terraform block_metrics name
+    name: "test-k8s-app-frontend-RESOURCE_SUFFIX-block-metrics-access" # 對應 terraform block_metrics name
