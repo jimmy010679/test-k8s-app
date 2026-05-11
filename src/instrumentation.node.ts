@@ -3,6 +3,8 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { CompositePropagator, W3CTraceContextPropagator, W3CBaggagePropagator } from '@opentelemetry/core';
+import { CloudPropagator } from '@google-cloud/opentelemetry-cloud-trace-propagator';
 
 const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 
@@ -23,6 +25,15 @@ if (otlpEndpoint) {
      * - /v1/traces：               OTLP 官方規範的固定路由(通常會自動補上，不用自己加)，用來接收 Trace 數據（K8s 介面上看不到這個路徑，這是 Collector 程式內部的設定）
     */
     traceExporter: new OTLPTraceExporter(),
+
+    // 設定與 GCP 連結，讓它能接住 GCP Load Balancer 傳來的 X-Cloud-Trace-Context
+    textMapPropagator: new CompositePropagator({
+      propagators: [
+        new CloudPropagator(),           // GCP
+        new W3CTraceContextPropagator(), // 標準 W3C
+        new W3CBaggagePropagator()       // 標準附帶資訊
+      ],
+    }),
 
     // 自動掛載常用的 Node.js 追蹤 (如 HTTP 請求、資料庫查詢等)
     instrumentations: [getNodeAutoInstrumentations()],
