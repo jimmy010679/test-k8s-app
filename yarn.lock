@@ -2353,34 +2353,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ai-code-review@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "ai-code-review@workspace:."
-  dependencies:
-    "@google-cloud/opentelemetry-cloud-trace-propagator": "npm:^0.21.0"
-    "@opentelemetry/api": "npm:^1.9.1"
-    "@opentelemetry/auto-instrumentations-node": "npm:^0.75.0"
-    "@opentelemetry/core": "npm:^2.7.1"
-    "@opentelemetry/exporter-trace-otlp-http": "npm:^0.217.0"
-    "@opentelemetry/resources": "npm:^2.7.1"
-    "@opentelemetry/sdk-node": "npm:^0.217.0"
-    "@opentelemetry/sdk-trace-base": "npm:^2.7.1"
-    "@opentelemetry/semantic-conventions": "npm:^1.40.0"
-    "@types/node": "npm:^20"
-    "@types/react": "npm:^19"
-    "@types/react-dom": "npm:^19"
-    babel-plugin-react-compiler: "npm:1.0.0"
-    eslint: "npm:^9"
-    eslint-config-next: "npm:16.1.6"
-    next: "npm:16.1.6"
-    postgres: "npm:^3.4.9"
-    prom-client: "npm:^15.1.3"
-    react: "npm:19.2.3"
-    react-dom: "npm:19.2.3"
-    typescript: "npm:^5"
-  languageName: unknown
-  linkType: soft
-
 "ajv@npm:^6.14.0":
   version: 6.14.0
   resolution: "ajv@npm:6.14.0"
@@ -5405,6 +5377,34 @@ __metadata:
   checksum: 10c0/10187b8144b112fcdfd3a5e4e9068efa42c990b1e30cd0d4f35ee8f58f16d1b41bc587e668fa7a6f6ca31308961cbd06cd5d4a4ae1dc388335902ae04f7d57df
   languageName: node
   linkType: hard
+
+"test-k8s-app@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "test-k8s-app@workspace:."
+  dependencies:
+    "@google-cloud/opentelemetry-cloud-trace-propagator": "npm:^0.21.0"
+    "@opentelemetry/api": "npm:^1.9.1"
+    "@opentelemetry/auto-instrumentations-node": "npm:^0.75.0"
+    "@opentelemetry/core": "npm:^2.7.1"
+    "@opentelemetry/exporter-trace-otlp-http": "npm:^0.217.0"
+    "@opentelemetry/resources": "npm:^2.7.1"
+    "@opentelemetry/sdk-node": "npm:^0.217.0"
+    "@opentelemetry/sdk-trace-base": "npm:^2.7.1"
+    "@opentelemetry/semantic-conventions": "npm:^1.40.0"
+    "@types/node": "npm:^20"
+    "@types/react": "npm:^19"
+    "@types/react-dom": "npm:^19"
+    babel-plugin-react-compiler: "npm:1.0.0"
+    eslint: "npm:^9"
+    eslint-config-next: "npm:16.1.6"
+    next: "npm:16.1.6"
+    postgres: "npm:^3.4.9"
+    prom-client: "npm:^15.1.3"
+    react: "npm:19.2.3"
+    react-dom: "npm:19.2.3"
+    typescript: "npm:^5"
+  languageName: unknown
+  linkType: soft
 
 "tinyglobby@npm:^0.2.13, tinyglobby@npm:^0.2.15":
   version: 0.2.15

@@ -209,8 +209,8 @@ gemini -i "$(cat AGENTS.md)"
 ├── .github/                     # CI/CD 工作流 (GitHub Actions)
 ├── Dockerfile                   # Container Image 定義
 ├── CLAUDE.md                    # CLAUDE rules
-├── .geminirules                 # Gemini rules
 ├── ARCHITECTURE.md              # 專案技術藍圖
+├── AGENTS.md                    # Gemini CLI 與 CodeX rules
 ├── DESIGN.md                    # 當前執行的規格 (AI 讀取的焦點)
 ├── DESIGN.template.md           # 規格模板 (供複製使用)
 └── package.json                 # 專案依賴與腳本
