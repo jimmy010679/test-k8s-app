@@ -141,7 +141,7 @@ NEXT_PUBLIC_SITENAME="TEST"
 NEXT_PUBLIC_DESCRIPTION="TEST"
 ```
 
-### 3. 把資料庫通道硬設在本機上，需登入GCP，搭配 **[gcp-infra-core](https://github.com/jimmy010679/gcp-infra-core)** 專案，使用跳板機+IAP
+### 3. 把資料庫通道硬射在本機上，需登入GCP，搭配 **[gcp-infra-core](https://github.com/jimmy010679/gcp-infra-core)** 專案，使用跳板機+IAP
 ```bash
 gcloud compute ssh test-k8s-app-prod-bastion \
     --tunnel-through-iap \
@@ -170,20 +170,49 @@ docker run -d -p 3000:3000 --name test-k8s-app-container test-k8s-app
 
 ---
 
+## 使用 AI Agent 開發
+
+### Gemini CLI
+
+```bash
+gemini -i "$(cat AGENTS.md)"
+```
+
+### Claude Code
+讀取 CLAUDE.md
+
+### CodeX
+讀取 AGENTS.md
+
+---
+
 ## 專案結構
 
 ```text
-.
-├── .github/workflows/            # CI/CD 流程定義 (部署、AI 審查、自動修復)
-├── k8s/                          # Kubernetes 資源定義
-│   ├── backend-config.yaml
-│   ├── certificate.yaml          # Google 託管憑證定義
-│   ├── deployment.yaml           # 應用程式容器定義
-│   ├── frontend-config.yaml      # HTTP 轉 HTTPS 重定向配置
-│   ├── hpa.yaml
-│   ├── ingress.yaml              # 外部流量入口與 SSL 配置
-│   ├── secret-provider.yaml
-│   └──service.yaml              # 內部服務負載平衡
-└── src/                          # Next.js 應用程式原始碼
+/
+├── k8s/                         # Kubernetes Manifests (針對 GKE)
+├── public/                      # 靜態資源 (Images, Icons)
+├── scripts/                     # 自動化與 Review 腳本
+├── docs/                        # 參考文件規範
+│   ├── specs/                   # AI歷史需求歸檔（歸檔，供 AI 檢索参考）
+│   └── style_guides/            # 開發風格指南與規範
+├── src/                         #
+│   ├── app/                     # Next.js App Router (頁面、佈局、API Routes)
+│   │   ├── (api)/               # 內部 API 路由 (Health Check, Metrics)
+│   │   └── ...                  # 前端頁面
+│   ├── lib/                     # 共用函式庫與工具函式
+│   │   ├── db.ts                # PostgreSQL 連線管理 (使用 postgres.js)
+│   │   └── metrics.ts           # Prometheus Metrics 配置
+│   ├── types/                   # 全域 TypeScript 型別定義
+│   ├── instrumentation.ts       # Next.js Instrumentation 入口點
+│   └── instrumentation.node.ts  # OpenTelemetry Node.js SDK 設定
+├── .github/                     # CI/CD 工作流 (GitHub Actions)
+├── Dockerfile                   # Container Image 定義
+├── CLAUDE.md                    # CLAUDE rules
+├── .geminirules                 # Gemini rules
+├── ARCHITECTURE.md              # 專案技術藍圖
+├── DESIGN.md                    # 當前執行的規格 (AI 讀取的焦點)
+├── DESIGN.template.md           # 規格模板 (供複製使用)
+└── package.json                 # 專案依賴與腳本
 ```
 

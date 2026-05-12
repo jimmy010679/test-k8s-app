@@ -31,7 +31,7 @@ if (otlpEndpoint) {
   const baseRateSampler = new RouteFilterSampler(new TraceIdRatioBasedSampler(sampleRate));
 
   const sdk = new NodeSDK({
-    // 定義這個服務的名稱，你在 Cloud Trace 畫面上會看到這個名字
+    // 服務資源名稱 ( GCP > Cloud Trace > Trace探索工具 )
     resource: resourceFromAttributes({
       [ATTR_SERVICE_NAME]: 'test-k8s-app-frontend',
     }),

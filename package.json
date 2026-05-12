@@ -1,5 +1,5 @@
 {
-  "name": "ai-code-review",
+  "name": "test-k8s-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
