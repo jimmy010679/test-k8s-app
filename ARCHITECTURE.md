@@ -107,7 +107,9 @@ graph TD
 ## 7. 開發與測試 (Development & Testing)
 
 - **本地開發:** 
-    - 使用 `.env.local` 進行本地配置。
+    - 使用 `.env` 進行本地配置。
+   -  切換NODE版本 `nvm use`
+    - yarn使用 `corepack enable`
     - 執行 `yarn dev` 啟動開發伺服器。
 - **程式碼品質:** 使用 ESLint 進行靜態檢查，TypeScript 確保型別安全。
 

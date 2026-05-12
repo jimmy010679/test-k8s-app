@@ -3,6 +3,8 @@
 這份文件定義了 **test-k8s-app** 專案的開發規範與 AI 代理行為準則。
 
 ## 常用指令 (Build & Dev)
+- 切換NODE版本：`nvm use`
+- corepack指令：`corepack enable`
 - 安裝依賴：`yarn install`
 - 啟動開發伺服器：`yarn dev`
 - 專案編譯：`yarn build`

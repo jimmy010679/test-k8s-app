@@ -118,9 +118,10 @@
 NEXT_PUBLIC_APP_ENV=local
 NEXT_PUBLIC_SITENAME="TEST"
 NEXT_PUBLIC_DESCRIPTION="TEST"
-DB_USER= "app_runner"
-DB_NAME= "test_k8s_app_main"
-DB_PORT= "5432"
+DB_HOST="localhost"
+DB_USER="app_runner"
+DB_NAME="test_k8s_app_main"
+DB_PORT="5432"
 DB_PASSWORD=your_local_password_here
 ```
 
@@ -129,6 +130,7 @@ DB_PASSWORD=your_local_password_here
 - NEXT_PUBLIC_APP_ENV: 環境 (prod, uat, dev)
 - NEXT_PUBLIC_SITENAME: 網站名稱
 - NEXT_PUBLIC_DESCRIPTION: 網站說明
+- DB_HOST: 不用填寫，由 K8s ConfigMap 注入同名變量
 - DB_USER: 不用填寫，由 K8s ConfigMap 注入同名變量
 - DB_NAME: 不用填寫，由 K8s ConfigMap 注入同名變量
 - DB_PORT: 不用填寫，由 K8s ConfigMap 注入同名變量
