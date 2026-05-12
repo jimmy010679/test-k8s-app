@@ -172,6 +172,9 @@ docker run -d -p 3000:3000 --name test-k8s-app-container test-k8s-app
 
 ## 使用 AI Agent 開發
 
+### Codex
+讀取 AGENTS.md
+
 ### Gemini CLI
 
 ```bash
@@ -180,9 +183,6 @@ gemini -i "$(cat AGENTS.md)"
 
 ### Claude Code
 讀取 CLAUDE.md
-
-### CodeX
-讀取 AGENTS.md
 
 ---
 
@@ -210,7 +210,7 @@ gemini -i "$(cat AGENTS.md)"
 ├── Dockerfile                   # Container Image 定義
 ├── CLAUDE.md                    # CLAUDE rules
 ├── ARCHITECTURE.md              # 專案技術藍圖
-├── AGENTS.md                    # Gemini CLI 與 CodeX rules
+├── AGENTS.md                    # Gemini CLI 與 Codex rules
 ├── DESIGN.md                    # 當前執行的規格 (AI 讀取的焦點)
 ├── DESIGN.template.md           # 規格模板 (供複製使用)
 └── package.json                 # 專案依賴與腳本

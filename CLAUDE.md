@@ -8,7 +8,7 @@
 - 專案編譯：`yarn build`
 - 啟動生產環境：`yarn start`
 
-## 測試規範 (Testing)
+## 測試規範 (Testing)=> 測試尚未完成
 - 執行所有測試：`yarn test`
 - 測試監控模式：`yarn test:watch`
 - **核心準則**：避免直接測試私有方法或函式，應專注於公開介面 (Public Interfaces) 的測試。
