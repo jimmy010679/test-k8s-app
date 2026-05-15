@@ -27,7 +27,6 @@ jobs:
     env:
       TARGET_NS: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
       CLUSTER_NAME: "test-k8s-app-${{ github.ref_name == 'main' && 'prod' || github.ref_name }}-cluster"
-      REPO_URL: "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}"
 
     permissions:
       contents: 'read'
@@ -36,6 +35,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v5
+
+    - name: Prepare Deployment Variables
+      run: |-
+        echo "REPO_URL=$GAR_LOCATION-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/$REPOSITORY/$IMAGE" >> "$GITHUB_ENV"
 
     # 1. WIF 認證
     - id: 'auth'
@@ -88,7 +91,7 @@ jobs:
     - name: Run Trivy vulnerability scanner on Docker image
       uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
       with:
-        image-ref: '${{ env.REPO_URL }}:${{ github.sha }}'
+        image-ref: '${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }}'
         format: 'table'
         exit-code: '1'  # 失敗中斷
         ignore-unfixed: true
