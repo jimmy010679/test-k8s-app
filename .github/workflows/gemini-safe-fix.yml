@@ -26,6 +26,14 @@ jobs:
             TARGET_BRANCH="main"
           fi
 
+          case "$TARGET_BRANCH" in
+            main|uat|dev) ;;
+            *)
+              echo "::error::不支援的目標分支: $TARGET_BRANCH"
+              exit 1
+              ;;
+          esac
+
           # 2. 轉換為 GitHub Environment 名稱 (對應你設定的 production/uat/dev)
           if [ "$TARGET_BRANCH" == "main" ]; then
             ENV="production"
@@ -58,13 +66,12 @@ jobs:
       TARGET_BRANCH: ${{ needs.prepare.outputs.TARGET_BRANCH }}
 
     steps:
-
       - name: Checkout Code
         uses: actions/checkout@v5
         with:
           ref: ${{ env.TARGET_BRANCH }} # 使用解析出的變數切換到對應分支
 
-      # WIF 認證
+      # 1. WIF 認證
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v3'
@@ -74,7 +81,7 @@ jobs:
           workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
           service_account: '${{ vars.GCP_SERVICE_ACCOUNT }}'
 
-      # 下載環境變數 .env
+      # 2. 下載環境變數 .env
       - name: Download Environment File from GCS
         run: |-
           # 根據 PR 的目標分支決定環境 TARGET_BRANCH
@@ -90,28 +97,35 @@ jobs:
           # 從 GCS 桶下載
           gcloud storage cp gs://${{ vars.GCP_APP_NAME }}-env-bucket/$TARGET_ENV/.env .env
 
+      # 3. Enable Corepack
       - name: Enable Corepack
         run: corepack enable
 
+      # 4. 設定 Node
       - name: Setup Node.js 
         uses: actions/setup-node@v5
         with:
           node-version: '24.14.0'
           cache: 'yarn'
 
+      # 5. 安裝依賴
       - name: Install Dependencies
         run: |
           yarn install --immutable # CI 環境建議加上 --immutable 確保 yarn.lock 沒被意外變動
 
+      # 6. 安裝 Gemini
       - name: Install Gemini CLI
         run: npm install -g @google/gemini-cli
 
+      # 7. AI 自我修復
       - name: Gemini Auto-Fix with Budget Control
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_AUTO_FIX_MODEL: '${{ vars.GEMINI_AUTO_FIX_MODEL }}'
           GEMINI_CLI_TRUST_WORKSPACE: true
           MAX_RETRIES: 3 # 最多重試 3 次，控制 API 成本
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
         run: |
           attempt=1
           success=false
@@ -122,7 +136,7 @@ jobs:
             # 1. 呼叫 Gemini：加入嚴格禁令
             # 增加指令要求僅限修改 src/，且嚴禁修改腳本語法
             gemini -p "這是一個 Next.js 專案。
-            請針對 ${{ env.TARGET_BRANCH }} 分支修復 Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}。
+            請針對 $TARGET_BRANCH 分支修復 Issue #$ISSUE_NUMBER: $ISSUE_TITLE。
             修改完後必須確保 yarn lint 與 yarn build 都能通過。
 
             【任務目標】：
@@ -134,7 +148,7 @@ jobs:
             2. 絕對禁止修改 .github/ 或 scripts/ 目錄下的任何內容。" --model "$GEMINI_AUTO_FIX_MODEL" --yolo || true
 
             # 2. 【核心保險】：不可改變的目錄
-            git checkout ${{ env.TARGET_BRANCH }} -- .github/ scripts/
+            git checkout "$TARGET_BRANCH" -- .github/ scripts/
             echo "不可改變的目錄，防止 AI 竄改相關配置。"
             
             # 3. 驗證
@@ -156,6 +170,18 @@ jobs:
             exit 1
           fi
 
+      # 8. Trivy v0.36.0 原始碼與依賴庫掃描 (SCA) ==> 應用層
+      - name: Run Trivy vulnerability scanner in source code
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1' # 掃描失敗時中止 PR 建立
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      # 9. 建立 PR
       - name: Create Pull Request
         if: env.SUCCESS == 'true'
         uses: peter-evans/create-pull-request@v8

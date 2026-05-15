@@ -28,7 +28,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      # WIF 認證
+      # 1. WIF 認證
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v3'
@@ -38,7 +38,7 @@ jobs:
           workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
           service_account: '${{ vars.GCP_SERVICE_ACCOUNT }}'
 
-      # 下載環境變數 .env
+      # 2. 下載環境變數 .env
       - name: Download Environment File from GCS
         run: |-
           # 根據 PR 的目標分支決定環境 (github.base_ref)
@@ -54,15 +54,29 @@ jobs:
           # 從 GCS 桶下載
           gcloud storage cp gs://${{ vars.GCP_APP_NAME }}-env-bucket/$TARGET_ENV/.env .env
 
+      # 3. Enable Corepack
       - name: Enable Corepack
         run: corepack enable
 
+      # 4. 設定 Node
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: '24.14.0'
           cache: 'yarn'
 
+      # 5. Trivy v0.36.0 原始碼與依賴庫掃描 (SCA) ==> 應用層
+      - name: Run Trivy vulnerability scanner in source code
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1' # 讓 PR 亮紅燈
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      # 6. 安裝 Gemini
       - name: Install Dependencies
         run: yarn add @google/generative-ai
 
@@ -72,6 +86,7 @@ jobs:
           # 獲取 PR 的改動內容，排除非代碼或鎖定檔
           git diff origin/${{ github.base_ref }}...HEAD -- . ':(exclude)yarn.lock' ':(exclude)*.md' > pr_diff.txt
 
+      # 7. Gemini Code Review
       - name: Run Gemini Review
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -81,6 +96,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: node scripts/gemini-reviewer.js pr_diff.txt
 
+      # 8. 更新結果
       - name: Upload Review Result (Optional)
         if: always()
         uses: actions/upload-artifact@v5

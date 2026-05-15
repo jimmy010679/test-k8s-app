@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: test-k8s-app-frontend-RESOURCE_SUFFIX-deployment
+  namespace: RESOURCE_SUFFIX
   labels:
     app: test-k8s-app-frontend-RESOURCE_SUFFIX
     tier: frontend
@@ -22,45 +23,69 @@ spec:
         app: test-k8s-app-frontend-RESOURCE_SUFFIX
         tier: frontend
     spec:
+      securityContext:
+        runAsNonRoot: true     # 強制不能以 root 身份執行
+        runAsUser: 10001       # 指定執行身份的 UID
+        runAsGroup: 10001      # 指定執行身份的 GID
+        fsGroup: 10001         # 掛載 Volume 時的檔案權限群組
+        seccompProfile:
+          type: RuntimeDefault # 系統預設安全限制
+
       serviceAccountName: test-k8s-app-frontend-RESOURCE_SUFFIX-sa # Pod 的身分證 (test-k8s-app-frontend-prod-sa)
+      
       containers:
-      - name: test-k8s-app-container
-        # 這裡填入你 Artifact Registry 裡的 Image 路徑
-        image: asia-east1-docker.pkg.dev/test-k8s-app-492717/test-k8s-app-repo/my-app:v1
-        ports:
-        - containerPort: 3000 # 你的程式監聽的 Port
-          name: http
-        resources:
-          requests:
-            cpu: "1"         # 啟動時預留 1 核心
-            memory: "1Gi"    # 啟動時預留 1GB 內存
-          limits:
-            cpu: "1"         # 最高限制 1 核心
-            memory: "1Gi"    # 最高限制 1GB 內存 (避免 OOM)
-        startupProbe:
-          httpGet:
-            path: /healthz
-            port: 3000
-          failureThreshold: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 3000
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        envFrom:
-          - configMapRef:
-              name: test-k8s-app-frontend-RESOURCE_SUFFIX-config
-        volumeMounts:
-          - mountPath: "/var/secrets"
-            name: db-secret-volume
+        - name: test-k8s-app-container
+          # 這裡填入你 Artifact Registry 裡的 Image 路徑 (Trivy KSV-0125)
+          image: asia-east1-docker.pkg.dev/test-k8s-app-492717/test-k8s-app-repo/my-app:v1
+          securityContext:
+            allowPrivilegeEscalation: false # 禁止子程序獲得比父程序更多的權限
+            readOnlyRootFilesystem: true    # 開啟根文件系統只讀
+            capabilities:
+              drop:
+                - ALL                       # 拔除所有預設的 Linux 特權
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+          - containerPort: 3000 # 你的程式監聽的 Port
+            name: http
+          resources:
+            requests:
+              cpu: "1"                   # 啟動時預留 1 核心
+              memory: "1Gi"              # 啟動時預留 1GB 內存
+              ephemeral-storage: "512Mi" # 節點上的臨時磁碟空間
+            limits:
+              cpu: "1"                   # 最高限制 1 核心
+              memory: "1Gi"              # 最高限制 1GB 內存 (避免 OOM)
+              ephemeral-storage: "2Gi"   # 節點上的臨時磁碟空間
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          envFrom:
+            - configMapRef:
+                name: test-k8s-app-frontend-RESOURCE_SUFFIX-config
+          volumeMounts:
+            - mountPath: "/var/secrets"
+              name: db-secret-volume
+              readOnly: true
+            - mountPath: "/tmp"             # 给 Next.js 臨時文件目錄
+              name: tmp-volume
+            - mountPath: "/app/.next/cache" # 给 Next.js 圖片與頁面緩存
+              name: next-cache-volume
       volumes:
         - name: db-secret-volume
           csi:
@@ -68,3 +93,9 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: "test-k8s-app-frontend-RESOURCE_SUFFIX-secrets-provider"
+        - name: tmp-volume
+          emptyDir:
+            sizeLimit: 128Mi
+        - name: next-cache-volume
+          emptyDir:
+            sizeLimit: 512Mi

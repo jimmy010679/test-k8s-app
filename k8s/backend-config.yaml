@@ -2,6 +2,7 @@ apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
   name: test-k8s-app-frontend-RESOURCE_SUFFIX-be-config
+  namespace: RESOURCE_SUFFIX
 spec:
   healthCheck:
     checkIntervalSec: 15
@@ -9,4 +10,4 @@ spec:
     type: HTTP
     requestPath: /healthz
   securityPolicy: # 綁定 Cloud Armor 策略
-    name: "test-k8s-app-frontend-RESOURCE_SUFFIX-block-metrics-access" # 對應 terraform block_metrics name
+    name: "test-k8s-app-frontend-RESOURCE_SUFFIX-block-waf-policy" # 對應 terraform waf_policy name

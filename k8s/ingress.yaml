@@ -2,6 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name:  test-k8s-app-RESOURCE_SUFFIX-ingress
+  namespace: RESOURCE_SUFFIX
   annotations:
     kubernetes.io/ingress.class: "gce" # 告訴 GKE 使用 Google Cloud 的外部負載平衡器
     kubernetes.io/ingress.global-static-ip-name: "STATIC_IP_NAME" # 這裡會被 deploy.yml 替換成 test-k8s-static-ip-prod/uat/dev

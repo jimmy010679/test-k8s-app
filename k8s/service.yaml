@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: test-k8s-app-frontend-RESOURCE_SUFFIX-service
+  namespace: RESOURCE_SUFFIX
   annotations:
     cloud.google.com/backend-config: '{"default": "test-k8s-app-frontend-RESOURCE_SUFFIX-be-config"}'
 spec:

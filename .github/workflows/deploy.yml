@@ -14,7 +14,7 @@ env:
 jobs:
   setup-build-publish-deploy:
     name: Setup, Build, Publish, and Deploy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # ubuntu-latest: https://github.com/actions/runner-images
     
     # GitHub 的 Environment
     # main -> prod
@@ -27,6 +27,7 @@ jobs:
     env:
       TARGET_NS: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
       CLUSTER_NAME: "test-k8s-app-${{ github.ref_name == 'main' && 'prod' || github.ref_name }}-cluster"
+      REPO_URL: "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}"
 
     permissions:
       contents: 'read'
@@ -66,21 +67,74 @@ jobs:
         password: '${{ steps.auth.outputs.access_token }}'
         registry: '${{ env.GAR_LOCATION }}-docker.pkg.dev'
 
-    # 4. 打包並推送 Docker Image
-    # 使用 GitHub Run ID 作為 Tag，確保每次部署的 Image 都是唯一的
-    - name: Build and Push Container
+    # 4. Trivy v0.36.0 原始碼與依賴庫掃描 (SCA) ==> 應用層
+    - name: Run Trivy vulnerability scanner in source code
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+      with:
+        scan-type: 'fs' # 掃描檔案系統 (package.json, package-lock.json)
+        scan-ref: '.'
+        format: 'table'
+        exit-code: '1'  # 失敗中斷
+        ignore-unfixed: true # 忽略官方尚未釋出修復補丁的漏洞（避免無法上線）
+        severity: 'CRITICAL,HIGH'
+
+    # 5. Build Image
+    - name: Build Container Image
       run: |-
-        # 定義環境變數
-        REPO_URL="${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}"
-        
         # 建立兩個標籤：一個是唯一的 SHA，一個是環境標籤 (如 :prod)
         docker build -t "$REPO_URL:${{ github.sha }}" -t "$REPO_URL:$TARGET_NS" .
-        
+
+    # 6. Trivy v0.36.0 Docker Image 安全掃描 ==> 系統層
+    - name: Run Trivy vulnerability scanner on Docker image
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+      with:
+        image-ref: '${{ env.REPO_URL }}:${{ github.sha }}'
+        format: 'table'
+        exit-code: '1'  # 失敗中斷
+        ignore-unfixed: true
+        severity: 'CRITICAL'
+
+    # 7. Push Image
+    - name: Push Container Image
+      run: |-
         # 推送兩個標籤
         docker push "$REPO_URL:${{ github.sha }}"
         docker push "$REPO_URL:$TARGET_NS"
+
+
+    # 8. 建立二進位授權證明
+    - name: Create Attestation
+      run: |-
+        # 取得鏡像的具體 Digest (SHA256)，簽名必須針對 Digest 而非標籤
+        IMAGE_DIGEST=$(gcloud artifacts docker images describe "$REPO_URL:${{ github.sha }}" --format='get(image_summary.digest)')
+
+        # 將變量導出，供後續步驟使用
+        echo "IMAGE_DIGEST=$IMAGE_DIGEST" >> $GITHUB_ENV
+
+        # 動態查詢 KMS 金鑰的最新版本編號
+        KEY_VERSION=$(gcloud kms keys versions list \
+          --key="${{ vars.GCP_APP_NAME }}-${{ env.TARGET_NS }}-attestor-key" \
+          --keyring="${{ vars.GCP_APP_NAME }}-${{ env.TARGET_NS }}-attestor-key-ring" \
+          --location="${{ env.GAR_LOCATION }}" \
+          --filter="state=ENABLED" \
+          --sort-by="~creationTime" \
+          --format="value(name)" | head -n 1 | rev | cut -d/ -f1 | rev)
+
+        echo "正在使用金鑰版本: $KEY_VERSION 進行簽名"
         
-    # 5. 獲取 GKE 憑證
+        # 使用 gcloud 指令進行簽名
+        # 這會調用你在 Terraform 建立的公證人與 KMS 金鑰
+        gcloud container binauthz attestations create \
+          --artifact-url="$REPO_URL@$IMAGE_DIGEST" \
+          --attestor="${{ vars.GCP_APP_NAME }}-${{ env.TARGET_NS }}-attestor" \
+          --attestor-project="${{ vars.GCP_PROJECT_ID }}" \
+          --keyversion-project="${{ vars.GCP_PROJECT_ID }}" \
+          --keyversion-location="${{ env.GAR_LOCATION }}" \
+          --keyversion-keyring="${{ vars.GCP_APP_NAME }}-${{ env.TARGET_NS }}-attestor-key-ring" \
+          --keyversion-key="${{ vars.GCP_APP_NAME }}-${{ env.TARGET_NS }}-attestor-key" \
+          --keyversion="$KEY_VERSION"
+        
+    # 9. 獲取 GKE 憑證
     - name: Set up GKE credentials
       uses: 'google-github-actions/get-gke-credentials@v3'
       with:
@@ -88,7 +142,7 @@ jobs:
         cluster_name: '${{ env.CLUSTER_NAME }}'
         location: '${{ env.CLUSTER_LOCATION }}'
 
-    # 6. 部署到 GKE
+    # 10. 部署到 GKE
     - name: Deploy to GKE
       run: |-
         # 1. 決定對應的網域
@@ -102,12 +156,14 @@ jobs:
         echo "Using Domain: $DOMAIN"
         echo "Using Static IP Name: test-k8s-app-$TARGET_NS-static-ip"
 
-        # 2. 確保 Namespace 存在
-        kubectl create namespace $TARGET_NS --dry-run=client -o yaml | kubectl apply -f -
+        # 2. 檢查 Namespace 是否存在
+        if ! kubectl get namespace "$TARGET_NS" >/dev/null 2>&1; then
+          echo "::error::Namespace '$TARGET_NS' 不存在，請先透過 Terraform 建立。"
+          exit 1
+        fi
 
         # 3. 替換 Deployment 裡的 Image 路徑
-        IMAGE_PATH="${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }}"
-        sed -i "s|image: .*|image: $IMAGE_PATH|g" k8s/deployment.yaml
+        sed -i "s|image: .*|image: $REPO_URL@$IMAGE_DIGEST|g" k8s/deployment.yaml
 
         # 4. 替換 Ingress 裡的靜態 IP 名稱
         sed -i "s|STATIC_IP_NAME|test-k8s-app-$TARGET_NS-static-ip|g" k8s/ingress.yaml
@@ -118,23 +174,20 @@ jobs:
         # 6 替換 Certificate 替換憑證裡的網域
         sed -i "s|DOMAIN_NAME_PLACEHOLDER|$DOMAIN|g" k8s/certificate.yaml
 
-        # 7. 替換 HPA 的 Namespace 議題
-        sed -i "/namespace:/d" k8s/hpa.yaml
-
-        # 8. 替換 secret-provider 的 GCP_PROJECT_ID + GCP_APP_NAME
+        # 7. 替換 secret-provider 的 GCP_PROJECT_ID + GCP_APP_NAME
         sed -i "s|YOUR_PROJECT_ID|${{ vars.GCP_PROJECT_ID }}|g" k8s/secret-provider.yaml
         sed -i "s|YOUR_GCP_APP_NAME|${{ vars.GCP_APP_NAME }}|g" k8s/secret-provider.yaml
 
-        # 9. 替換 k8s/*.yaml 下所有的 RESOURCE_SUFFIX 換成 環境名
+        # 8. 替換 k8s/*.yaml 下所有的 RESOURCE_SUFFIX 換成 環境名
         sed -i "s|RESOURCE_SUFFIX|$TARGET_NS|g" k8s/*.yaml
 
-        # 10. 檢查 SecretProviderClass CRD 是否就緒
+        # 9. 檢查 SecretProviderClass CRD 是否就緒
         kubectl wait --for=condition=established --timeout=60s crd/secretproviderclasses.secrets-store.csi.x-k8s.io
 
-        # 11. 部署 secret-provider.yaml，確保 secret-provider.yaml 是在 deployment.yaml 前面
+        # 10. 部署 secret-provider.yaml，確保 secret-provider.yaml 是在 deployment.yaml 前面
         kubectl apply -f k8s/secret-provider.yaml -n $TARGET_NS
    
-        # 12. 部署 基礎組件 (Deployment, Service, HPA, Certificate, frontend-config)
+        # 11. 部署 基礎組件 (Deployment, Service, HPA, Certificate, frontend-config)
         kubectl apply -f k8s/deployment.yaml \
                       -f k8s/service.yaml \
                       -f k8s/hpa.yaml \
@@ -143,22 +196,22 @@ jobs:
                       -f k8s/backend-config.yaml \
                       -n $TARGET_NS
 
-        # 13. 精準等待：直到 Deployment 的 Pod 全部進入 Ready 狀態
+        # 12. 精準等待：直到 Deployment 的 Pod 全部進入 Ready 狀態
         kubectl wait --for=condition=available --timeout=300s deployment/test-k8s-app-frontend-$TARGET_NS-deployment -n $TARGET_NS
 
-        # 14. 給 GCP API 多 10 秒的緩衝
+        # 13. 給 GCP API 多 10 秒的緩衝
         sleep 10
 
-        # 15. 再部署 Ingress
+        # 14. 再部署 Ingress
         kubectl apply -f k8s/ingress.yaml -n $TARGET_NS
 
-        # 16. 等待 GKE 分配 IP 給 Ingress，這能確保靜態 IP 真的被認領成功了
+        # 15. 等待 GKE 分配 IP 給 Ingress，這能確保靜態 IP 真的被認領成功了
         echo "正在等待 GKE 分配靜態 IP..."
         kubectl wait --namespace $TARGET_NS \
           --for=jsonpath='{.status.loadBalancer.ingress[0].ip}' \
           --timeout=300s ingress/test-k8s-app-$TARGET_NS-ingress
 
-        # 17. 成功後印出 IP 確認
+        # 16. 成功後印出 IP 確認
         FINAL_IP=$(kubectl get ingress test-k8s-app-$TARGET_NS-ingress -n $TARGET_NS -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
         echo "部署完成！Ingress IP 為: $FINAL_IP"
         

@@ -170,6 +170,28 @@ docker run -d -p 3000:3000 --name test-k8s-app-container test-k8s-app
 # 造訪 http://localhost:3000
 ```
 
+### 6. 日常套件升級
+```bash
+# next
+yarn up next
+yarn up next@16.1.7
+
+# eslint-config-next
+yarn up eslint-config-next
+```
+
+### 7. Trivy 漏洞掃描
+本機開發階段
+
+```bash
+
+# 掃描
+trivy fs --severity HIGH,CRITICAL --ignore-unfixed .
+
+# 本機可忽略 .next 目錄 (開發會殘留)
+trivy fs --severity HIGH,CRITICAL --ignore-unfixed --skip-dirs .next .
+```
+
 ---
 
 ## 使用 AI Agent 開發
