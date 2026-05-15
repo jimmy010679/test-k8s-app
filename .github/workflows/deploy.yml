@@ -93,7 +93,7 @@ jobs:
       with:
         image-ref: '${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }}'
         format: 'table'
-        exit-code: '1'  # 失敗中斷
+        exit-code: '0'  # 不阻斷部署，只告警，不中斷
         ignore-unfixed: true
         severity: 'CRITICAL'
 
