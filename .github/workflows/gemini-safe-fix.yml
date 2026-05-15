@@ -183,10 +183,10 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
-      # 9. 清除 Trivy 可能的 Cache (雖然已有 TRIVY_CACHE_DIR，以防萬一)
-      - name: Clean Tool Cache Files
+      # 9. 清除工具 Cache 與 GCP WIF 暫存憑證，避免被放進 PR。
+      - name: Clean Generated Tool Files
         if: always()
-        run: rm -rf .cache
+        run: rm -rf .cache gha-creds-*.json
 
       # 10. 建立 PR
       - name: Create Pull Request

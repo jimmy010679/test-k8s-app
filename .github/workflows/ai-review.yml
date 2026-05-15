@@ -82,13 +82,14 @@ jobs:
       - name: Install Dependencies
         run: yarn add @google/generative-ai
 
+      # 7. 取得 PR git diff
       - name: Get PR Diff
         id: diff
         run: |
           # 獲取 PR 的改動內容，排除非代碼或鎖定檔
           git diff origin/${{ github.base_ref }}...HEAD -- . ':(exclude)yarn.lock' ':(exclude)*.md' > pr_diff.txt
 
-      # 7. Gemini Code Review
+      # 8. Gemini Code Review
       - name: Run Gemini Review
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -98,12 +99,12 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: node scripts/gemini-reviewer.js pr_diff.txt
 
-      # 8. 清除 Trivy 可能的 Cache (雖然已有 TRIVY_CACHE_DIR，以防萬一)
-      - name: Clean Tool Cache Files
+      # 9. 清除 Trivy 可能的 Cache (雖然已有 TRIVY_CACHE_DIR，以防萬一)
+      - name: Clean Generated Tool Files
         if: always()
-        run: rm -rf .cache
+        run: rm -rf .cache gha-creds-*.json
 
-      # 9. 更新結果
+      # 10. 更新結果
       - name: Upload Review Result (Optional)
         if: always()
         uses: actions/upload-artifact@v5
