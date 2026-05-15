@@ -10,4 +10,4 @@ spec:
     type: HTTP
     requestPath: /healthz
   securityPolicy: # 綁定 Cloud Armor 策略
-    name: "test-k8s-app-frontend-RESOURCE_SUFFIX-block-waf-policy" # 對應 terraform waf_policy name
+    name: "test-k8s-app-frontend-RESOURCE_SUFFIX-waf-policy" # 對應 terraform waf_policy name
