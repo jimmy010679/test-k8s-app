@@ -16,7 +16,7 @@ async function fetchDbStatus() {
       // tracer 標記這段追蹤為成功
       span.setStatus({ code: 1 }); // 1 = OK
 
-      return result[0].now.toLocaleString(); 
+      return result[0].now.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }); 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('[Database] 資料庫請求異常:', errorMessage);
