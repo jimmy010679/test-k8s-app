@@ -104,7 +104,6 @@ jobs:
         docker push "$REPO_URL:${{ github.sha }}"
         docker push "$REPO_URL:$TARGET_NS"
 
-
     # 8. 建立二進位授權證明
     - name: Create Attestation
       run: |-
@@ -127,7 +126,7 @@ jobs:
         
         # 使用 gcloud 指令進行簽名
         # 這會調用你在 Terraform 建立的公證人與 KMS 金鑰
-        gcloud container binauthz attestations create \
+        gcloud beta container binauthz attestations sign-and-create \
           --artifact-url="$REPO_URL@$IMAGE_DIGEST" \
           --attestor="${{ vars.GCP_APP_NAME }}-${{ env.TARGET_NS }}-attestor" \
           --attestor-project="${{ vars.GCP_PROJECT_ID }}" \
