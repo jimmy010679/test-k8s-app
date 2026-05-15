@@ -1,7 +1,7 @@
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig
 metadata:
-  name: 
+  name: ssl-redirect-config
   namespace: RESOURCE_SUFFIX
 spec:
   redirectToHttps:
