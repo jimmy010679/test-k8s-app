@@ -211,7 +211,7 @@ jobs:
         echo "正在等待 GKE 分配靜態 IP..."
         kubectl wait --namespace $TARGET_NS \
           --for=jsonpath='{.status.loadBalancer.ingress[0].ip}' \
-          --timeout=300s ingress/test-k8s-app-$TARGET_NS-ingress
+          --timeout=600s ingress/test-k8s-app-$TARGET_NS-ingress
 
         # 16. 成功後印出 IP 確認
         FINAL_IP=$(kubectl get ingress test-k8s-app-$TARGET_NS-ingress -n $TARGET_NS -o jsonpath='{.status.loadBalancer.ingress[0].ip}')

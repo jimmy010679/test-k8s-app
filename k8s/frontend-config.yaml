@@ -1,7 +1,7 @@
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig
 metadata:
-  name: ssl-redirect-config
+  name: test-k8s-app-frontend-RESOURCE_SUFFIX-ssl-redirect-config
   namespace: RESOURCE_SUFFIX
 spec:
   redirectToHttps:
