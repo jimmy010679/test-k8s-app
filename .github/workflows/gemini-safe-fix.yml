@@ -173,6 +173,8 @@ jobs:
       # 8. Trivy v0.36.0 原始碼與依賴庫掃描 (SCA) ==> 應用層
       - name: Run Trivy vulnerability scanner in source code
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        env:
+          TRIVY_CACHE_DIR: ${{ runner.temp }}/trivy-cache
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -181,7 +183,12 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
-      # 9. 建立 PR
+      # 9. 清除 Trivy 可能的 Cache (雖然已有 TRIVY_CACHE_DIR，以防萬一)
+      - name: Clean Tool Cache Files
+        if: always()
+        run: rm -rf .cache
+
+      # 10. 建立 PR
       - name: Create Pull Request
         if: env.SUCCESS == 'true'
         uses: peter-evans/create-pull-request@v8

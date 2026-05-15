@@ -68,6 +68,8 @@ jobs:
       # 5. Trivy v0.36.0 原始碼與依賴庫掃描 (SCA) ==> 應用層
       - name: Run Trivy vulnerability scanner in source code
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        env:
+          TRIVY_CACHE_DIR: ${{ runner.temp }}/trivy-cache
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -96,7 +98,12 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: node scripts/gemini-reviewer.js pr_diff.txt
 
-      # 8. 更新結果
+      # 8. 清除 Trivy 可能的 Cache (雖然已有 TRIVY_CACHE_DIR，以防萬一)
+      - name: Clean Tool Cache Files
+        if: always()
+        run: rm -rf .cache
+
+      # 9. 更新結果
       - name: Upload Review Result (Optional)
         if: always()
         uses: actions/upload-artifact@v5

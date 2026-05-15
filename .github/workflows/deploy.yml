@@ -73,6 +73,8 @@ jobs:
     # 4. Trivy v0.36.0 原始碼與依賴庫掃描 (SCA) ==> 應用層
     - name: Run Trivy vulnerability scanner in source code
       uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+      env:
+        TRIVY_CACHE_DIR: ${{ runner.temp }}/trivy-cache
       with:
         scan-type: 'fs' # 掃描檔案系統 (package.json, package-lock.json)
         scan-ref: '.'
@@ -90,6 +92,8 @@ jobs:
     # 6. Trivy v0.36.0 Docker Image 安全掃描 ==> 系統層
     - name: Run Trivy vulnerability scanner on Docker image
       uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+      env:
+        TRIVY_CACHE_DIR: ${{ runner.temp }}/trivy-cache
       with:
         image-ref: '${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ github.sha }}'
         format: 'table'
@@ -97,14 +101,19 @@ jobs:
         ignore-unfixed: true
         severity: 'CRITICAL'
 
-    # 7. Push Image
+    # 7. 清除 Trivy 可能的 Cache (雖然已有 TRIVY_CACHE_DIR，以防萬一)
+    - name: Clean Tool Cache Files
+      if: always()
+      run: rm -rf .cache
+
+    # 8. Push Image
     - name: Push Container Image
       run: |-
         # 推送兩個標籤
         docker push "$REPO_URL:${{ github.sha }}"
         docker push "$REPO_URL:$TARGET_NS"
 
-    # 8. 建立二進位授權證明
+    # 9. 建立二進位授權證明
     - name: Create Attestation
       run: |-
         # 取得鏡像的具體 Digest (SHA256)，簽名必須針對 Digest 而非標籤
@@ -136,7 +145,7 @@ jobs:
           --keyversion-key="${{ vars.GCP_APP_NAME }}-${{ env.TARGET_NS }}-attestor-key" \
           --keyversion="$KEY_VERSION"
         
-    # 9. 獲取 GKE 憑證
+    # 10. 獲取 GKE 憑證
     - name: Set up GKE credentials
       uses: 'google-github-actions/get-gke-credentials@v3'
       with:
@@ -144,7 +153,7 @@ jobs:
         cluster_name: '${{ env.CLUSTER_NAME }}'
         location: '${{ env.CLUSTER_LOCATION }}'
 
-    # 10. 部署到 GKE
+    # 11. 部署到 GKE
     - name: Deploy to GKE
       run: |-
         # 1. 決定對應的網域
